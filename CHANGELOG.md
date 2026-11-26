@@ -19,3 +19,4 @@
 - Recuperação de sessão após falha de rede, limitação e inicialização a frio, com testes em desktop e mobile.
 
 - Tela de acesso da homologação redesenhada, com cadastro por e-mail, confirmação de senha e liberação administrativa por UID.
+- Cadastro agora diferencia e-mail já cadastrado e senha rejeitada e oferece recuperação direta.
