@@ -1,17 +1,7 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  type FormEvent,
-  type ReactNode,
-} from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  GoogleAuthProvider,
   onAuthStateChanged,
-  sendPasswordResetEmail,
-  signInWithEmailAndPassword,
-  signInWithPopup,
   signOut,
   type Auth,
   type User,
@@ -19,27 +9,9 @@ import {
 import { api, ApiError } from "../services/api";
 import { firebaseAuth } from "../services/firebase";
 import type { Identity } from "../domain/types";
+import { AccessLayout, FirebaseAccess } from "./FirebaseAccess";
 
 type Session = { remote: ReturnType<typeof api>; identity: Identity };
-
-function signInError(error: unknown) {
-  if (error instanceof ApiError) return error.message;
-  const code = (error as { code?: string } | null)?.code;
-  switch (code) {
-    case "auth/unauthorized-domain":
-      return "Este domínio precisa ser autorizado no Firebase para usar o Google.";
-    case "auth/popup-blocked":
-      return "Permita a janela do Google ou use e-mail e senha.";
-    case "auth/popup-closed-by-user":
-      return "Janela do Google fechada.";
-    case "auth/too-many-requests":
-      return "Muitas tentativas. Aguarde e tente novamente.";
-    case "auth/network-request-failed":
-      return "Falha de rede. Confira a conexão e tente novamente.";
-    default:
-      return "Não foi possível entrar. Confira os dados e tente novamente.";
-  }
-}
 
 let authInstance: Auth | undefined;
 
@@ -53,11 +25,7 @@ export default function FirebaseGate({
   const [fatal, setFatal] = useState("");
   const [user, setUser] = useState<User | null>();
   const [authorized, setAuthorized] = useState<Session | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [email, setEmail] = useState("");
-  const [resetMode, setResetMode] = useState(false);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
   const [checking, setChecking] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const uid = useRef<string | null>(null);
@@ -70,7 +38,6 @@ export default function FirebaseGate({
     setAuthorized(null);
     setUser(null);
     setError("");
-    setNotice("");
     void signOut(auth).catch(() => setError("Falha ao sair. Tente novamente."));
   }
 
@@ -138,7 +105,11 @@ export default function FirebaseGate({
           if (!operation.signal.aborted) {
             client.clear();
             setAuthorized(null);
-            setError(signInError(caught));
+            setError(
+              caught instanceof ApiError
+                ? caught.message
+                : "Falha ao verificar o acesso. Tente novamente.",
+            );
           }
         })
         .finally(() => {
@@ -152,143 +123,61 @@ export default function FirebaseGate({
     };
   }, [auth, attempt, client]);
 
-  async function action(run: () => Promise<unknown>) {
-    setBusy(true);
-    setError("");
-    setNotice("");
-    try {
-      await run();
-    } catch (caught) {
-      setError(signInError(caught));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!auth) return;
-    const password = new FormData(event.currentTarget).get("password");
-    if (!resetMode) {
-      void action(() =>
-        signInWithEmailAndPassword(auth, email.trim(), String(password ?? "")),
-      );
-      return;
-    }
-    void action(async () => {
-      try {
-        await sendPasswordResetEmail(auth, email.trim());
-      } catch (caught) {
-        if ((caught as { code?: string }).code !== "auth/user-not-found")
-          throw caught;
-      }
-      setNotice(
-        "Se o e-mail estiver cadastrado, você receberá o link de recuperação.",
-      );
-    });
-  }
-
   if (authorized && user) return children(authorized, logout);
   return (
-    <main className="sign-in">
-      <div className="panel stack">
-        <h1>RM Control</h1>
-        <p className="muted">Homologação · Operações logísticas</p>
-        {fatal ? (
-          <p role="alert" className="error">
+    <AccessLayout>
+      {fatal ? (
+        <>
+          <h1 id="access-title">Acesso indisponível</h1>
+          <p role="alert" className="access-feedback error">
             {fatal}
           </p>
-        ) : user === undefined || checking ? (
-          <p role="status">
-            Verificando acesso. O servidor pode levar até um minuto para
-            iniciar.
+        </>
+      ) : user === undefined || checking || !auth ? (
+        <>
+          <h1 id="access-title">Verificando acesso</h1>
+          <p role="status" className="access-feedback">
+            O servidor pode levar até um minuto para iniciar.
           </p>
-        ) : user ? (
-          <>
-            {error && (
-              <p role="alert" className="error">
-                {error}
-              </p>
-            )}
+        </>
+      ) : user ? (
+        <>
+          <header className="access-heading">
+            <h1 id="access-title">Acesso pendente</h1>
             <p>
-              UID da conta <code className="user-uid">{user.uid}</code>
+              Compartilhe seu UID com o administrador do RM Control para
+              solicitar acesso.
             </p>
-            <div className="actions">
-              <button onClick={() => setAttempt((value) => value + 1)}>
-                Verificar acesso novamente
-              </button>
-              <button onClick={logout}>Sair</button>
-            </div>
-          </>
-        ) : (
-          <>
-            <form className="stack" onSubmit={submit}>
-              <label htmlFor="email">E-mail</label>
-              <input
-                id="email"
-                type="email"
-                autoComplete="username"
-                required
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-              />
-              {!resetMode && (
-                <>
-                  <label htmlFor="password">Senha</label>
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autoComplete="current-password"
-                    required
-                  />
-                </>
-              )}
-              <button className="primary" disabled={busy}>
-                {busy
-                  ? "Aguarde…"
-                  : resetMode
-                    ? "Enviar link de recuperação"
-                    : "Entrar"}
-              </button>
-            </form>
-            {!resetMode && (
-              <button
-                disabled={busy}
-                onClick={() => {
-                  if (!auth) return;
-                  const provider = new GoogleAuthProvider();
-                  provider.setCustomParameters({ prompt: "select_account" });
-                  void action(() => signInWithPopup(auth, provider));
-                }}
-              >
-                Entrar com Google
-              </button>
-            )}
+          </header>
+          {error && (
+            <p role="alert" className="access-feedback error">
+              {error}
+            </p>
+          )}
+          <div className="access-uid">
+            <strong>UID da conta</strong>
+            <code className="user-uid">{user.uid}</code>
+          </div>
+          <div className="access-actions">
             <button
-              className="link-button"
-              disabled={busy}
-              onClick={() => {
-                setResetMode(!resetMode);
-                setError("");
-                setNotice("");
-              }}
+              className="primary"
+              onClick={() => setAttempt((value) => value + 1)}
             >
-              {resetMode ? "Voltar ao login" : "Esqueci minha senha"}
+              Verificar acesso novamente
             </button>
-            {error && (
-              <p role="alert" className="error">
-                {error}
-              </p>
-            )}
-            {notice && (
-              <p role="status" className="notice">
-                {notice}
-              </p>
-            )}
-          </>
-        )}
-      </div>
-    </main>
+            <button onClick={logout}>Sair</button>
+          </div>
+        </>
+      ) : (
+        <>
+          {error && (
+            <p role="alert" className="access-feedback error">
+              {error}
+            </p>
+          )}
+          <FirebaseAccess auth={auth} />
+        </>
+      )}
+    </AccessLayout>
   );
 }

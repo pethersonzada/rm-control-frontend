@@ -66,6 +66,9 @@ test("mantém navegação acessível e cabe na largura da tela", async ({
   page,
 }) => {
   await page.goto("/");
+  await expect(
+    page.getByRole("heading", { name: "Visão geral" }),
+  ).toBeVisible();
   await page.keyboard.press("Tab");
   await expect(
     page.getByRole("link", { name: "Ir para o conteúdo" }),

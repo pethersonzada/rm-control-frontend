@@ -17,3 +17,5 @@
 - Área administrativa de usuários autorizada pelo backend.
 - Build e CSP de homologação separados da demonstração pública.
 - Recuperação de sessão após falha de rede, limitação e inicialização a frio, com testes em desktop e mobile.
+
+- Tela de acesso da homologação redesenhada, com cadastro por e-mail, confirmação de senha e liberação administrativa por UID.

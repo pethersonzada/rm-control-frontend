@@ -284,13 +284,6 @@ td small {
   padding-left: 1.3rem;
   color: #704600;
 }
-.sign-in {
-  min-height: 100vh;
-  place-content: center;
-}
-.sign-in form {
-  max-width: 28rem;
-}
 .skip-link {
   position: absolute;
   left: -100vw;
