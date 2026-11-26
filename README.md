@@ -2,7 +2,7 @@
 
 Interface web para acompanhamento de ocorrências logísticas e importação de dados operacionais.
 
-> Versão 0.1.0 — protótipo em desenvolvimento, para execução local.
+> Versão 0.2.0 — protótipo em desenvolvimento, para execução local.
 
 ## Funcionalidades implementadas
 
@@ -31,12 +31,21 @@ Acesse http://localhost:5173. Por padrão, a API é consultada em http://127.0.0
 npm run build
 ```
 
+## Novidades da versão 0.2
+
+- Importação detalhada de produtos, valores, BDV e números de notas fiscais.
+- Importação de histórico XLSX com prévia e opção explícita de excluir conflitos.
+- Filtros por período e registros de teste, indicadores de valores informados e exportação CSV.
+- Conferência de inventário por loja e PLU, sem ajustes automáticos.
+- Token de acesso opcional informado na conexão; não é armazenado no navegador.
+- Workflow de build no GitHub Actions.
+
 ## Próximas etapas
 
-Importação detalhada de valores e documentos, histórico de planilhas, indicadores financeiros, conciliação de inventários, autenticação e testes integrados.
+Validar os formatos reais, implementar autenticação individual, regras de prazos e conciliação contábil, paginação no servidor e implantação autorizada.
 
 ## Segurança e licença
 
-Use apenas dados fictícios ou autorizados. Não publique arquivos operacionais, dados pessoais ou credenciais. A versão atual não possui autenticação e não deve ser exposta à internet ou à rede corporativa.
+Use apenas dados fictícios ou autorizados. Não publique arquivos operacionais, dados pessoais ou credenciais. O token opcional não substitui autenticação individual, HTTPS e autorização por perfil. Não exponha esta versão à internet ou à rede corporativa.
 
 Software proprietário. Consulte [LICENSE](LICENSE).
