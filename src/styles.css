@@ -1,13 +1,15 @@
 :root {
   font-family: "Inter", system-ui, sans-serif;
-  color: #17283c;
-  background: #eef2f7;
+  color: var(--navy);
+  background: var(--cream);
   font-synthesis: none;
   line-height: 1.45;
-  --muted: #495d74;
-  --blue: #175da9;
-  --navy: #14263d;
-  --line: #d3dde8;
+  --muted: #52566b;
+  --cream: #f4e1d2;
+  --accent: #640119;
+  --blue: var(--accent);
+  --navy: #1b2f68;
+  --line: #d8c7ba;
 }
 * {
   box-sizing: border-box;
@@ -53,7 +55,7 @@ button,
   min-height: 42px;
   color: var(--navy);
   background: white;
-  border: 1px solid #8d9fb5;
+  border: 1px solid #927f78;
   border-radius: 6px;
   font-weight: 600;
   text-decoration: none;
@@ -64,7 +66,8 @@ button,
   color: white;
 }
 .primary:hover {
-  background: #124f92;
+  background: #480012;
+  border-color: #480012;
 }
 input,
 select,
@@ -75,7 +78,7 @@ textarea {
   min-width: 0;
   color: inherit;
   background: white;
-  border: 1px solid #8497af;
+  border: 1px solid #927f78;
   border-radius: 6px;
 }
 input[type="checkbox"] {
@@ -84,13 +87,16 @@ input[type="checkbox"] {
   accent-color: var(--blue);
 }
 :focus-visible {
-  outline: 3px solid #2b74c7;
+  outline: 3px solid var(--navy);
   outline-offset: 3px;
 }
 .layout {
   display: grid;
   grid-template-columns: 14.5rem minmax(0, 1fr);
   min-height: 100vh;
+}
+aside :focus-visible {
+  outline-color: var(--cream);
 }
 aside {
   background: var(--navy);
@@ -105,7 +111,7 @@ aside {
   font-weight: 750;
 }
 .brand small {
-  color: #c9d6e7;
+  color: var(--cream);
   font-size: 0.78rem;
   font-weight: 500;
 }
@@ -119,16 +125,18 @@ nav {
 .nav-link {
   display: block;
   padding: 0.62rem 0.75rem;
-  color: #e7eef7;
+  color: var(--cream);
   text-decoration: none;
   border-radius: 6px;
 }
 .nav-link:hover,
 .nav-link.active {
-  background: #294666;
+  background: #344a83;
   color: white;
 }
 .nav-link.active {
+  background: var(--cream);
+  color: var(--navy);
   font-weight: 700;
 }
 .aside-bottom {
@@ -157,8 +165,8 @@ main {
 .skeleton {
   padding: 0.75rem 0.9rem;
   border-radius: 6px;
-  background: #e3edfa;
-  color: #173e6c;
+  background: #eceef5;
+  color: var(--navy);
 }
 .error {
   background: #ffebed;
@@ -229,6 +237,7 @@ label :is(select, input):not([type="checkbox"]) {
   font-size: 0.875rem;
 }
 .metrics dd {
+  color: var(--navy);
   font-weight: 700;
   font-size: 1.2rem;
   overflow-wrap: anywhere;
@@ -251,26 +260,26 @@ td {
 }
 th {
   color: var(--navy);
-  background: #f2f5f9;
+  background: #faf2eb;
 }
 td small {
   color: var(--muted);
 }
 .link-button {
   min-height: 36px;
-  color: #114e8d;
+  color: var(--navy);
   border-color: transparent;
   text-decoration: underline;
 }
 .status {
   display: inline-block;
-  color: #20436c;
-  background: #eaf0f8;
+  color: var(--navy);
+  background: #eceef5;
   padding: 0.2rem 0.35rem;
   border-radius: 4px;
 }
 .record-details {
-  background: #f2f5f9;
+  background: #faf2eb;
   padding: 0.6rem;
 }
 .inline-form {
