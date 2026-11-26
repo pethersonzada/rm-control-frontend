@@ -1,51 +1,43 @@
 # RM Control | Frontend
 
-Interface web para acompanhamento de ocorrências logísticas e importação de dados operacionais.
+Painel proprietário de ocorrências logísticas, importação, indicadores financeiros e conferência de inventário.
 
-> Versão 0.2.0 — protótipo em desenvolvimento, para execução local.
+## Demonstração pública
 
-## Funcionalidades implementadas
+[RM Control na Vercel](https://rm-control-frontend.vercel.app) é o domínio estável. O build público usa cenários sintéticos de listagem, detalhamento e histórico. O navegador guarda somente os identificadores dos cenários selecionados. A ação **Limpar demonstração** apaga o progresso e o armazenamento usado pela versão anterior. A demo usa uma política de conteúdo que bloqueia conexões da página e a saúde em `/api/health` é um arquivo estático. URLs geradas de preview permanecem protegidas pela Vercel.
 
-- Painel com contagem de chamados, itens e situações.
-- Pesquisa por código de ocorrência, carga ou produto.
-- Filtros por status e motivo.
-- Importação por texto copiado, com prévia e confirmação.
-- Exemplo fictício para avaliação.
+## Desenvolvimento
 
-## Tecnologias
-
-React, TypeScript, Vite e CSS responsivo.
-
-## Executar localmente
-
-Requisitos: Node.js 22+ e npm. Inicie também a [API](https://github.com/pethersonzada/rm-control-backend).
+Node.js 22.17 ou superior. O ambiente de CI usa Node 22.22.
 
 ```bash
-npm install
+npm ci
 npm run dev
+npm run build:demo
+npm test
+npx playwright install chromium
+npm run test:e2e
 ```
 
-Acesse http://localhost:5173. Por padrão, a API é consultada em http://127.0.0.1:8000. Para alterar, copie `.env.example` para `.env.local` e ajuste `VITE_API_URL`.
+O modo de desenvolvimento abre em http://127.0.0.1:5173. Os testes Playwright executam o build público em desktop e mobile, incluindo acessibilidade automatizada e um contexto anônimo separado.
+
+## Ambiente operacional
+
+Em um host privado, configure `VITE_APP_MODE=operational` e `VITE_API_URL`, execute `npm run build` e configure o fallback do servidor para as rotas React. Use o [backend](https://github.com/pethersonzada/rm-control-backend) e conceda credenciais individuais com o perfil e a lista de lojas autorizados. A credencial dura apenas a sessão desta aba. Evite usar a configuração pública da Vercel para servir este build.
+
+O XLSX vai por multipart à API privada, que executa a leitura. A interface mostra o estado de processamento e permite cancelar a espera pela prévia. A prévia usa páginas de 50 chamados. O limite por arquivo é 21 MB e o lote de gravação tem limite de 12 MB JSON. O transporte direto preserva o arquivo e evita expansão em base64. Web Workers foram avaliados para leitura local. Eles ajudariam em uma futura prévia privada offline. O parser Python é a única implementação de regras XLSX neste fluxo.
+
+A interface usa React Router, TanStack Query, Recharts carregado sob demanda e CSS responsivo. O CSS existente foi substituído por regras pequenas para as telas atuais. Tailwind CSS e shadcn/ui foram avaliados. O projeto mantém a estilização em CSS para limitar dependências e cobrir os componentes que usa.
+
+Expanda um chamado para editar motivo e status na prévia. Corrija conflitos estruturais na origem. O relatório exporta até 10 mil chamados filtrados. A consulta e a exportação usam a ordenação por código selecionada. Os valores são agregados em decimal no backend e formatados com BigInt no navegador. Leia o [CHANGELOG](CHANGELOG.md) para detalhes e pendências.
+
+## Verificação de deploy
+
+Após concluir o fluxo de CI, valide o domínio sem sessão da Vercel.
 
 ```bash
-npm run build
+node scripts/smoke.mjs
+RM_TEST_URL=https://rm-control-frontend.vercel.app npm run test:e2e
 ```
-
-## Novidades da versão 0.2
-
-- Importação detalhada de produtos, valores, BDV e números de notas fiscais.
-- Importação de histórico XLSX com prévia e opção explícita de excluir conflitos.
-- Filtros por período e registros de teste, indicadores de valores informados e exportação CSV.
-- Conferência de inventário por loja e PLU, sem ajustes automáticos.
-- Token de acesso opcional informado na conexão; não é armazenado no navegador.
-- Workflow de build no GitHub Actions.
-
-## Próximas etapas
-
-Validar os formatos reais, implementar autenticação individual, regras de prazos e conciliação contábil, paginação no servidor e implantação autorizada.
-
-## Segurança e licença
-
-Use apenas dados fictícios ou autorizados. Não publique arquivos operacionais, dados pessoais ou credenciais. O token opcional não substitui autenticação individual, HTTPS e autorização por perfil. Não exponha esta versão à internet ou à rede corporativa.
 
 Software proprietário. Consulte [LICENSE](LICENSE).
