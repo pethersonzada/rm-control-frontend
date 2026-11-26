@@ -16,3 +16,11 @@ jobs:
       - run: npm test
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+      - run: npm run build:homologacao
+        env:
+          VITE_API_URL: http://127.0.0.1:4174/api
+          VITE_FIREBASE_API_KEY: synthetic-test-api-key
+          VITE_FIREBASE_PROJECT_ID: rm-control-test
+          VITE_FIREBASE_AUTH_DOMAIN: rm-control-test.firebaseapp.com
+          VITE_FIREBASE_APP_ID: synthetic-app
+      - run: npm run test:e2e:auth

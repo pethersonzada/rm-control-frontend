@@ -1,6 +1,7 @@
 import type {
   Filters,
   Identity,
+  Member,
   InventoryRequest,
   InventoryResult,
   Occurrence,
@@ -12,13 +13,16 @@ import { exact } from "../domain/money";
 
 const environment = import.meta.env;
 export const demo =
-  environment.MODE === "demo" || environment.VITE_APP_MODE !== "operational";
+  import.meta.env.MODE === "demo" ||
+  (import.meta.env.MODE !== "homologacao" &&
+    import.meta.env.VITE_APP_MODE !== "operational");
 
 function apiBase() {
   if (demo) throw new Error("A demonstração executa apenas no navegador.");
   const configured = environment.VITE_API_URL;
   if (!configured && environment.DEV) return "http://127.0.0.1:8000";
-  const url = new URL(configured || "/api", window.location.origin);
+  if (!configured) throw new Error("Configure a URL da API de homologação.");
+  const url = new URL(configured, window.location.origin);
   if (
     url.protocol !== "https:" &&
     !(
@@ -31,15 +35,34 @@ function apiBase() {
   return url.href.replace(/\/$/, "");
 }
 
-async function result<T>(response: Response): Promise<T> {
-  const data = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new Error(
-      typeof data?.detail === "string"
-        ? data.detail
-        : `A API retornou HTTP ${response.status}.`,
+const responseMessages: Record<number, string> = {
+  401: "Sessão expirada. Entre novamente.",
+  403: "Sua conta não tem permissão para esta operação.",
+  429: "Muitas requisições. Aguarde e tente novamente.",
+  503: "O servidor está iniciando ou temporariamente indisponível. Tente novamente em instantes.",
+};
+
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    detail?: string,
+  ) {
+    super(
+      (status === 403 && detail) ||
+        responseMessages[status] ||
+        detail ||
+        `A API retornou HTTP ${status}.`,
     );
   }
+}
+
+async function result<T>(response: Response): Promise<T> {
+  const data = await response.json().catch(() => null);
+  if (!response.ok)
+    throw new ApiError(
+      response.status,
+      typeof data?.detail === "string" ? data.detail : undefined,
+    );
   if (data === null) throw new Error("Resposta inválida da API.");
   return data as T;
 }
@@ -76,25 +99,54 @@ function validateRecords(records: Occurrence[]) {
   }
 }
 
-export function api(token: string) {
+export function api(
+  token: (force?: boolean) => Promise<string> | string,
+  onUnauthorized?: (error: ApiError) => void,
+) {
   async function request<T>(path: string, options: RequestInit = {}) {
-    if (!token) throw new Error("Informe a credencial individual.");
+    const signal = options.signal
+      ? AbortSignal.any([options.signal, AbortSignal.timeout(90_000)])
+      : AbortSignal.timeout(90_000);
     const headers = new Headers(options.headers);
-    headers.set("Authorization", "Bearer " + token);
     if (typeof options.body === "string")
       headers.set("Content-Type", "application/json");
-    let response: Response;
-    try {
-      response = await fetch(apiBase() + path, {
-        ...options,
-        headers,
-        cache: "no-store",
-        redirect: "error",
-      });
-    } catch (error) {
-      if (options.signal?.aborted) throw error;
-      throw new Error(
-        "Falha de conexão com a API. Confira o endereço e tente novamente.",
+    async function send(force = false) {
+      const bearer = await token(force);
+      if (!bearer) throw new ApiError(401);
+      headers.set("Authorization", "Bearer " + bearer);
+      try {
+        return await fetch(apiBase() + path, {
+          ...options,
+          signal,
+          headers,
+          cache: "no-store",
+          redirect: "error",
+        });
+      } catch (error) {
+        if (options.signal?.aborted) throw error;
+        if (signal.aborted) throw new ApiError(503);
+        throw new Error(
+          "Falha de conexão com a API. Confira a rede e tente novamente.",
+        );
+      }
+    }
+    let response = await send();
+    if (response.status === 401 && !signal.aborted) {
+      try {
+        response = await send(true);
+      } catch (error) {
+        if ((error as { code?: string })?.code === "auth/user-token-expired")
+          onUnauthorized?.(new ApiError(401));
+        throw error;
+      }
+    }
+    if (response.status === 401) onUnauthorized?.(new ApiError(401));
+    if (
+      response.status === 403 &&
+      response.headers.get("X-RM-Account-Denied") === "1"
+    ) {
+      onUnauthorized?.(
+        new ApiError(403, "Conta sem autorização para acessar o RM Control."),
       );
     }
     return result<T>(response);
@@ -113,8 +165,15 @@ export function api(token: string) {
   }
 
   return {
-    me: async () => {
-      const identity = await request<Identity>("/me");
+    users: (signal?: AbortSignal) =>
+      request<Member[]>("/admin/users", { signal }),
+    saveUser: (member: Member) =>
+      request<Member>("/admin/users", {
+        method: "PUT",
+        body: JSON.stringify(member),
+      }),
+    me: async (signal?: AbortSignal) => {
+      const identity = await request<Identity>("/me", { signal });
       if (
         typeof identity.subject !== "string" ||
         typeof identity.organization !== "string" ||

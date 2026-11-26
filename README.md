@@ -23,7 +23,9 @@ O modo de desenvolvimento abre em http://127.0.0.1:5173. Os testes Playwright ex
 
 ## Ambiente operacional
 
-Em um host privado, configure `VITE_APP_MODE=operational` e `VITE_API_URL`, execute `npm run build` e configure o fallback do servidor para as rotas React. Use o [backend](https://github.com/pethersonzada/rm-control-backend) e conceda credenciais individuais com o perfil e a lista de lojas autorizados. A credencial dura apenas a sessão desta aba. Evite usar a configuração pública da Vercel para servir este build.
+A [homologação](https://rm-control-homologacao.vercel.app) usa o projeto Firebase `rm-control-webapp` e a API no Render. Configure as variáveis `VITE_FIREBASE_*` e `VITE_API_URL` no projeto separado da Vercel. Defina Root Directory como `homologacao` e habilite a inclusão de fontes fora desse diretório. O build `npm run build:homologacao` publica em `homologacao/dist`. A CSP e as rotas desse projeto ficam em `homologacao/vercel.json`.
+
+Adicione somente o domínio estável de homologação aos domínios autorizados no Firebase e ao CORS do Render. A demo mantém seu próprio build e política sem rede. Configure as mesmas variáveis em `.env.local` e use `npm run dev` para desenvolvimento. A sessão Firebase dura a aba, restaura após recarregar e o SDK renova o token. O frontend carrega as permissões de `/me` e limpa os dados ao sair, trocar de conta ou perder o vínculo. O primeiro administrador é provisionado pelo procedimento documentado no [backend](https://github.com/pethersonzada/rm-control-backend/blob/main/docs/firebase-homologacao.md).
 
 O XLSX vai por multipart à API privada, que executa a leitura. A interface mostra o estado de processamento e permite cancelar a espera pela prévia. A prévia usa páginas de 50 chamados. O limite por arquivo é 21 MB e o lote de gravação tem limite de 12 MB JSON. O transporte direto preserva o arquivo e evita expansão em base64. Web Workers foram avaliados para leitura local. Eles ajudariam em uma futura prévia privada offline. O parser Python é a única implementação de regras XLSX neste fluxo.
 

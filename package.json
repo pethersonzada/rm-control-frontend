@@ -9,10 +9,13 @@
     "preview": "vite preview --host 127.0.0.1",
     "build:demo": "tsc --noEmit && vite build --mode demo",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "build:homologacao": "tsc --noEmit && vite build --mode homologacao --outDir homologacao/dist && node scripts/mark-homologacao.mjs",
+    "test:e2e:auth": "playwright test -c playwright.auth.config.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.108.4",
+    "firebase": "^13.4.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-is": "^19.3.1",
