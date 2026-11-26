@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://rm-control-backend-pethersonzadas-projects.vercel.app/:path*"
+      "destination": "https://rm-control-backend.vercel.app/:path*"
     }
   ]
 }
