@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 
 function token(sequence: number) {
   const now = Math.floor(Date.now() / 1000);
@@ -109,7 +110,9 @@ test("entra, renova, restaura sessão, sai e bloqueia UID não autorizado", asyn
   await page.getByRole("button", { name: "Voltar ao login" }).click();
   async function signIn() {
     await page.getByLabel("E-mail").fill(account.email);
-    await page.getByLabel("Senha").fill("senha-sintetica-para-teste");
+    await page
+      .getByLabel("Senha", { exact: true })
+      .fill("senha-sintetica-para-teste");
     await page.getByRole("button", { name: "Entrar", exact: true }).click();
   }
   await signIn();
@@ -153,4 +156,94 @@ test("entra, renova, restaura sessão, sai e bloqueia UID não autorizado", asyn
   );
   await expect(page.getByText(account.localId)).toBeVisible();
   await expect(page.getByRole("navigation")).toHaveCount(0);
+});
+
+test("cadastra conta e mantém a área operacional bloqueada até liberação", async ({
+  page,
+}) => {
+  const account = {
+    localId: "qa-uid",
+    email: "cadastro@example.invalid",
+    emailVerified: false,
+  };
+  let signups = 0;
+
+  await page.route("https://identitytoolkit.googleapis.com/**", (route) => {
+    const endpoint = new URL(route.request().url()).pathname;
+    if (endpoint.endsWith("accounts:signUp")) {
+      signups++;
+      expect(route.request().postDataJSON()).toMatchObject({
+        email: account.email,
+        password: "sintetica-123",
+        returnSecureToken: true,
+      });
+      return route.fulfill({
+        json: {
+          ...account,
+          idToken: token(0),
+          refreshToken: "qa-refresh",
+          expiresIn: "3600",
+        },
+      });
+    }
+    if (endpoint.endsWith("accounts:lookup")) {
+      return route.fulfill({ json: { users: [account] } });
+    }
+    return route.abort();
+  });
+  await page.route("**/api/me", (route) => {
+    expect(route.request().headers().authorization).toBeDefined();
+    return route.fulfill({
+      status: 403,
+      headers: { "X-RM-Account-Denied": "1" },
+      json: { detail: "Conta sem autorização para acessar o RM Control." },
+    });
+  });
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Criar conta" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Criar conta" }),
+  ).toBeVisible();
+  const accessibility = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+    .analyze();
+  expect(accessibility.violations).toEqual([]);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(page.viewportSize()!.width);
+
+  await page.getByLabel("E-mail", { exact: true }).fill(account.email);
+  await page.getByLabel("Senha", { exact: true }).fill("sintetica-123");
+  await page
+    .getByRole("button", { name: "Mostrar senha", exact: true })
+    .click();
+  await expect(page.getByLabel("Senha", { exact: true })).toHaveAttribute(
+    "type",
+    "text",
+  );
+  await page
+    .getByRole("button", { name: "Ocultar senha", exact: true })
+    .click();
+  await page.getByLabel("Confirme a senha").fill("diferente-123");
+  await page.getByRole("button", { name: "Criar conta" }).click();
+  await expect(page.getByRole("alert")).toHaveText(
+    "As senhas precisam ser iguais.",
+  );
+  expect(signups).toBe(0);
+
+  await page.getByLabel("Confirme a senha").fill("sintetica-123");
+  await page.getByRole("button", { name: "Criar conta" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Acesso pendente" }),
+  ).toBeVisible();
+  await expect(page.getByText(account.localId)).toBeVisible();
+  await expect(page.getByRole("navigation")).toHaveCount(0);
+  expect(signups).toBe(1);
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Acesso pendente" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Sair" }).click();
+  await expect(page.getByRole("button", { name: "Criar conta" })).toBeVisible();
 });
