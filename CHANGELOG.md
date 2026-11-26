@@ -16,3 +16,4 @@
 - Sessão por aba, renovação automática, cache descartado ao sair ou trocar de conta.
 - Área administrativa de usuários autorizada pelo backend.
 - Build e CSP de homologação separados da demonstração pública.
+- Recuperação de sessão após falha de rede, limitação e inicialização a frio, com testes em desktop e mobile.

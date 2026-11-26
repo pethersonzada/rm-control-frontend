@@ -13,6 +13,7 @@ test("entra, renova, restaura sessão, sai e bloqueia UID não autorizado", asyn
 }) => {
   let renewal = 0;
   let accountAllowed = true;
+  const disruptions = [0, 503, 429];
   const account = {
     localId: "qa-uid",
     email: "qa@example.invalid",
@@ -56,6 +57,9 @@ test("entra, renova, restaura sessão, sai e bloqueia UID não autorizado", asyn
     });
   });
   await page.route("**/api/me", (route) => {
+    const disruption = disruptions.shift();
+    if (disruption === 0) return route.abort();
+    if (disruption) return route.fulfill({ status: disruption, json: {} });
     if (!accountAllowed)
       return route.fulfill({
         status: 403,
@@ -109,6 +113,19 @@ test("entra, renova, restaura sessão, sai e bloqueia UID não autorizado", asyn
     await page.getByRole("button", { name: "Entrar", exact: true }).click();
   }
   await signIn();
+  const retry = page.getByRole("button", {
+    name: "Verificar acesso novamente",
+  });
+  await expect(page.getByRole("alert")).toContainText(
+    "Falha de conexão com a API",
+  );
+  await retry.click();
+  await expect(page.getByRole("alert")).toContainText(
+    "O servidor está iniciando",
+  );
+  await retry.click();
+  await expect(page.getByRole("alert")).toContainText("Muitas requisições");
+  await retry.click();
   await expect(
     page.getByRole("heading", { name: "Visão geral" }),
   ).toBeVisible();
