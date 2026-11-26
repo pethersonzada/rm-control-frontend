@@ -125,7 +125,8 @@ export function api(
       } catch (error) {
         if (options.signal?.aborted) throw error;
         if (signal.aborted) throw new ApiError(503);
-        throw new Error(
+        throw new ApiError(
+          0,
           "Falha de conexão com a API. Confira a rede e tente novamente.",
         );
       }

@@ -15,7 +15,7 @@ import {
   signOut,
   type Auth,
   type User,
-} from "firebase/auth";
+} from "@firebase/auth";
 import { api, ApiError } from "../services/api";
 import { firebaseAuth } from "../services/firebase";
 import type { Identity } from "../domain/types";

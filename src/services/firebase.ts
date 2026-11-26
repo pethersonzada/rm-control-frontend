@@ -1,9 +1,9 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp } from "@firebase/app";
 import {
   browserSessionPersistence,
   initializeAuth,
   browserPopupRedirectResolver,
-} from "firebase/auth";
+} from "@firebase/auth";
 
 const env = import.meta.env;
 
