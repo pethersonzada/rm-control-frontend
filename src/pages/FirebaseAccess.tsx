@@ -10,6 +10,7 @@ import {
 import "./access.css";
 
 type Mode = "login" | "register" | "reset";
+type FormError = { message: string; recover?: boolean };
 
 const views = {
   login: {
@@ -67,8 +68,16 @@ export function AccessLayout({ children }: { children: ReactNode }) {
   );
 }
 
-function authMessage(error: unknown, mode: Mode) {
-  switch ((error as { code?: string } | null)?.code) {
+function authMessage(code: string | undefined, mode: Mode) {
+  switch (code) {
+    case "auth/email-already-in-use":
+      return "Já existe uma conta com este e-mail. Se você usou o Google antes, volte ao login e escolha Entrar com Google.";
+    case "auth/account-exists-with-different-credential":
+      return "Entre pelo método que você usou para criar a conta.";
+    case "auth/invalid-email":
+      return "Confira se o endereço de e-mail está completo.";
+    case "auth/operation-not-allowed":
+      return "Este método de acesso está indisponível. Tente outra opção na tela de login.";
     case "auth/unauthorized-domain":
       return "Este domínio precisa ser autorizado no Firebase para usar o Google.";
     case "auth/popup-blocked":
@@ -84,7 +93,7 @@ function authMessage(error: unknown, mode: Mode) {
       return "Use uma senha mais forte, com letras, números e símbolos.";
     default:
       if (mode === "register")
-        return "Não foi possível criar a conta. Se você já tem cadastro, entre ou recupere a senha.";
+        return "O cadastro está temporariamente indisponível. Tente novamente em instantes.";
       if (mode === "reset")
         return "Não foi possível solicitar a recuperação de senha. Tente novamente.";
       return "Não foi possível entrar. Confira os dados e tente novamente.";
@@ -131,7 +140,7 @@ export function FirebaseAccess({ auth }: { auth: Auth }) {
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<FormError | null>(null);
   const [notice, setNotice] = useState("");
   const form = useRef<HTMLFormElement>(null);
   const pending = useRef(false);
@@ -139,7 +148,7 @@ export function FirebaseAccess({ auth }: { auth: Auth }) {
 
   function changeMode(next: Mode) {
     setMode(next);
-    setError("");
+    setError(null);
     setNotice("");
     form.current?.querySelector<HTMLInputElement>("#email")?.focus();
   }
@@ -148,12 +157,16 @@ export function FirebaseAccess({ auth }: { auth: Auth }) {
     if (pending.current) return;
     pending.current = true;
     setBusy(true);
-    setError("");
+    setError(null);
     setNotice("");
     try {
       await run();
     } catch (caught) {
-      setError(authMessage(caught, mode));
+      const code = (caught as { code?: string } | null)?.code;
+      setError({
+        message: authMessage(code, mode),
+        recover: mode === "register" && code === "auth/email-already-in-use",
+      });
     } finally {
       pending.current = false;
       setBusy(false);
@@ -167,7 +180,7 @@ export function FirebaseAccess({ auth }: { auth: Auth }) {
     const password = String(fields.get("password") ?? "");
     if (mode === "register") {
       if (password !== fields.get("confirm-password")) {
-        setError("As senhas precisam ser iguais.");
+        setError({ message: "As senhas precisam ser iguais." });
         form.current
           ?.querySelector<HTMLInputElement>("#confirm-password")
           ?.focus();
@@ -213,7 +226,10 @@ export function FirebaseAccess({ auth }: { auth: Auth }) {
             maxLength={254}
             required
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              setError(null);
+            }}
           />
         </div>
         {mode !== "reset" && (
@@ -231,9 +247,18 @@ export function FirebaseAccess({ auth }: { auth: Auth }) {
           </button>
         )}
         {error && (
-          <p role="alert" className="access-feedback error">
-            {error}
-          </p>
+          <div className="access-feedback error">
+            <p role="alert">{error.message}</p>
+            {error.recover && (
+              <button
+                type="button"
+                className="access-text-button"
+                onClick={() => changeMode("reset")}
+              >
+                Recuperar senha
+              </button>
+            )}
+          </div>
         )}
         {notice && (
           <p role="status" className="access-feedback notice">

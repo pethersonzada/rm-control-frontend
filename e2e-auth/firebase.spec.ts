@@ -247,3 +247,60 @@ test("cadastra conta e mantém a área operacional bloqueada até liberação", 
   await page.getByRole("button", { name: "Sair" }).click();
   await expect(page.getByRole("button", { name: "Criar conta" })).toBeVisible();
 });
+
+test("explica a recusa no cadastro e oferece recuperação sem reenviar o formulário", async ({
+  page,
+}) => {
+  const email = "conta-existente@example.invalid";
+  const failures = ["WEAK_PASSWORD : Password is too weak", "EMAIL_EXISTS"];
+  let recoveryRequests = 0;
+  await page.route("https://identitytoolkit.googleapis.com/**", (route) => {
+    const endpoint = new URL(route.request().url()).pathname;
+    if (endpoint.endsWith("accounts:signUp")) {
+      return route.fulfill({
+        status: 400,
+        json: { error: { message: failures.shift() } },
+      });
+    }
+    if (endpoint.endsWith("accounts:sendOobCode")) {
+      recoveryRequests++;
+      expect(route.request().postDataJSON()).toMatchObject({
+        email,
+        requestType: "PASSWORD_RESET",
+      });
+      return route.fulfill({ json: { email } });
+    }
+    return route.abort();
+  });
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Criar conta", exact: true }).click();
+  await page.getByLabel("E-mail", { exact: true }).fill(email);
+  await page.getByLabel("Senha", { exact: true }).fill("sintetica-123");
+  await page
+    .getByLabel("Confirme a senha", { exact: true })
+    .fill("sintetica-123");
+  const submit = page.getByRole("button", { name: "Criar conta", exact: true });
+  await submit.click();
+  await expect(page.getByRole("alert")).toContainText(
+    "Use uma senha mais forte",
+  );
+  await submit.click();
+  await expect(page.getByRole("alert")).toContainText("Já existe uma conta");
+  await page
+    .getByRole("button", { name: "Recuperar senha", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Recuperar senha" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("E-mail", { exact: true })).toHaveValue(email);
+  await expect(page.getByLabel("Senha", { exact: true })).toHaveCount(0);
+  expect(recoveryRequests).toBe(0);
+  await page
+    .getByRole("button", { name: "Enviar link de recuperação" })
+    .click();
+  await expect(page.getByRole("status")).toContainText(
+    "Se o e-mail estiver cadastrado",
+  );
+  expect(recoveryRequests).toBe(1);
+});
