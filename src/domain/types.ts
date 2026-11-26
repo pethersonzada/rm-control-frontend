@@ -60,6 +60,7 @@ export interface Identity {
   organization: string;
   stores: string[];
   role: "viewer" | "importer" | "admin";
+  can_delegate_admin?: boolean;
 }
 
 export interface Summary {
@@ -113,3 +114,11 @@ export const pending = new Set([
   "PENDENTE",
   "FORA DO PRAZO",
 ]);
+
+export interface Member {
+  uid: string;
+  stores: string[];
+  role: Identity["role"];
+  active: boolean;
+  owner?: boolean;
+}

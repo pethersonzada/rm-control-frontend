@@ -9,3 +9,10 @@
 - Login por credencial individual e controles por perfil. Exibição de prazo quando configurado na API.
 - Lockfile, Vitest, React Testing Library, Playwright, axe e verificação HTTP do deploy.
 - Pendências de aceite incluem validação na infraestrutura operacional autorizada e processamento histórico em fila.
+
+## 0.3.1
+
+- Login Firebase com Google, e-mail/senha e recuperação de senha.
+- Sessão por aba, renovação automática, cache descartado ao sair ou trocar de conta.
+- Área administrativa de usuários autorizada pelo backend.
+- Build e CSP de homologação separados da demonstração pública.

@@ -326,3 +326,7 @@ td small {
     padding: 1rem;
   }
 }
+
+.user-uid {
+  overflow-wrap: anywhere;
+}

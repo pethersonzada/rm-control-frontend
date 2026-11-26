@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { NavLink, Navigate, Route, Routes } from "react-router-dom";
 import type { Identity } from "./domain/types";
@@ -7,47 +7,55 @@ import { Dashboard } from "./pages/Dashboard";
 import { ImportPage } from "./pages/Import";
 import { Inventory } from "./pages/Inventory";
 import { Records } from "./pages/Records";
-import { api, demo } from "./services/api";
+import { type api, demo } from "./services/api";
 import { demoReset } from "./services/demo";
+
+const FirebaseGate =
+  import.meta.env.MODE === "demo"
+    ? null
+    : lazy(() => import("./pages/FirebaseGate"));
+const Users = lazy(() => import("./pages/Users"));
 
 const pages = [
   ["/", "Visão geral"],
   ["/chamados", "Chamados"],
   ["/importar", "Importar dados"],
   ["/inventarios", "Inventários"],
+  ["/usuarios", "Usuários"],
 ];
 
+type Session = { remote: ReturnType<typeof api>; identity: Identity };
+
 export function App() {
+  if (demo || !FirebaseGate) return <Workspace session={null} />;
+  return (
+    <Suspense fallback={<main role="status">Preparando autenticação…</main>}>
+      <FirebaseGate>
+        {(session, logout) => (
+          <Workspace
+            key={session.identity.subject}
+            session={session}
+            logout={logout}
+          />
+        )}
+      </FirebaseGate>
+    </Suspense>
+  );
+}
+
+function Workspace({
+  session,
+  logout,
+}: {
+  session: Session | null;
+  logout?: () => void;
+}) {
   const client = useQueryClient();
-  const [session, setSession] = useState<{
-    remote: ReturnType<typeof api>;
-    identity: Identity;
-  } | null>(null);
   const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [revision, setRevision] = useState(0);
-  const canImport =
-    demo ||
-    session?.identity.role === "importer" ||
-    session?.identity.role === "admin";
-
-  async function connect(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setBusy(true);
-    setError("");
-    try {
-      const data = new FormData(event.currentTarget);
-      const remote = api(String(data.get("credential") || "").trim());
-      const identity = await remote.me();
-      client.clear();
-      setSession({ remote, identity });
-    } catch (caught) {
-      setError((caught as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
+  const canAdmin = session?.identity.role === "admin";
+  const canImport = demo || session?.identity.role === "importer" || canAdmin;
 
   function resetDemo() {
     setError("");
@@ -59,33 +67,6 @@ export function App() {
     } catch {
       setError("O navegador não permitiu limpar o armazenamento.");
     }
-  }
-
-  if (!demo && !session) {
-    return (
-      <main className="sign-in">
-        <form className="panel stack" onSubmit={connect}>
-          <h1>RM Control</h1>
-          <p>Acesse seu ambiente operacional com a credencial individual.</p>
-          <label htmlFor="credential">Credencial individual</label>
-          <input
-            id="credential"
-            name="credential"
-            type="password"
-            autoComplete="current-password"
-            required
-          />
-          <button className="primary" disabled={busy}>
-            {busy ? "Verificando…" : "Entrar"}
-          </button>
-          {error && (
-            <p role="alert" className="error">
-              {error}
-            </p>
-          )}
-        </form>
-      </main>
-    );
   }
 
   return (
@@ -102,7 +83,11 @@ export function App() {
           </div>
           <nav aria-label="Navegação principal">
             {pages
-              .filter(([path]) => path !== "/importar" || canImport)
+              .filter(
+                ([path]) =>
+                  (path !== "/importar" || canImport) &&
+                  (path !== "/usuarios" || canAdmin),
+              )
               .map(([path, label]) => (
                 <NavLink key={path} to={path} end className="nav-link">
                   {label}
@@ -115,13 +100,7 @@ export function App() {
                 Limpar demonstração
               </button>
             ) : (
-              <button
-                className="secondary"
-                onClick={() => {
-                  client.clear();
-                  setSession(null);
-                }}
-              >
+              <button className="secondary" onClick={logout}>
                 Sair
               </button>
             )}
@@ -162,6 +141,20 @@ export function App() {
               element={canImport ? <ImportPage /> : <Navigate to="/" replace />}
             />
             <Route path="/inventarios" element={<Inventory />} />
+            <Route
+              path="/usuarios"
+              element={
+                canAdmin ? (
+                  <Suspense
+                    fallback={<p role="status">Carregando usuários…</p>}
+                  >
+                    <Users />
+                  </Suspense>
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
