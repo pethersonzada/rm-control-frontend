@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { RecordTable } from "../components/RecordTable";
 import type { ImportState, Occurrence, Preview } from "../domain/types";
 import { useWorkspace } from "../hooks/workspace";
+import { ApiError } from "../services/api";
 import {
   demoPreview,
   demoSave,
@@ -128,6 +129,7 @@ export function ImportPage() {
       discard();
       setNotice(`${result.saved} chamado(s) salvo(s).`);
     } catch (caught) {
+      if (caught instanceof ApiError && ([400,401,403,413,422,429].includes(caught.status) || (caught.status===409 && caught.message.includes("depois da prévia")))) sent.current = false;
       setError((caught as Error).message);
     } finally {
       saving.current = false;
@@ -269,6 +271,7 @@ export function ImportPage() {
             {preview.records.length} chamado(s) reconhecido(s)
             {preview.sheet ? ` na aba ${preview.sheet}` : ""}.
           </p>
+          {preview.comparison && <p className="muted">Comparação com o banco no momento da análise, antes de eventuais edições manuais.</p>}
           {preview.comparison && <dl className="metrics">{Object.entries(preview.comparison).map(([state,count])=><div key={state}><dt>{labels[state as ImportState]}</dt><dd>{count}</dd></div>)}</dl>}
           {preview.counts && (
             <p>
