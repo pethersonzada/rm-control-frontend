@@ -15,6 +15,8 @@ const FirebaseGate =
     ? null
     : lazy(() => import("./pages/FirebaseGate"));
 const Users = lazy(() => import("./pages/Users"));
+const Stores = lazy(() => import("./pages/Stores"));
+const NewTicket = lazy(() => import("./pages/Tickets"));
 
 const pages = [
   ["/", "Visão geral"],
@@ -22,6 +24,7 @@ const pages = [
   ["/importar", "Importar dados"],
   ["/inventarios", "Inventários"],
   ["/usuarios", "Usuários"],
+  ["/lojas", "Lojas"],
 ];
 
 type Session = { remote: ReturnType<typeof api>; identity: Identity };
@@ -31,11 +34,12 @@ export function App() {
   return (
     <Suspense fallback={<main role="status">Preparando autenticação…</main>}>
       <FirebaseGate>
-        {(session, logout) => (
+        {(session, logout, refresh) => (
           <Workspace
             key={session.identity.subject}
             session={session}
             logout={logout}
+            refresh={refresh}
           />
         )}
       </FirebaseGate>
@@ -46,15 +50,18 @@ export function App() {
 function Workspace({
   session,
   logout,
+  refresh,
 }: {
   session: Session | null;
   logout?: () => void;
+  refresh?: () => void;
 }) {
   const client = useQueryClient();
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [revision, setRevision] = useState(0);
   const canAdmin = session?.identity.role === "admin";
+  const canManageStores = canAdmin && session?.identity.can_delegate_admin;
   const canImport = demo || session?.identity.role === "importer" || canAdmin;
 
   function resetDemo() {
@@ -86,7 +93,8 @@ function Workspace({
               .filter(
                 ([path]) =>
                   (path !== "/importar" || canImport) &&
-                  (path !== "/usuarios" || canAdmin),
+                  (path !== "/usuarios" || canAdmin) &&
+                  (path !== "/lojas" || canManageStores),
               )
               .map(([path, label]) => (
                 <NavLink key={path} to={path} end className="nav-link">
@@ -136,6 +144,8 @@ function Workspace({
           <Routes key={revision}>
             <Route path="/" element={<Dashboard canImport={canImport} />} />
             <Route path="/chamados" element={<Records />} />
+            <Route path="/chamados/novo" element={!demo && canImport ? <Suspense fallback={<p role="status">Carregando formulário…</p>}><NewTicket /></Suspense> : <Navigate to="/chamados" replace />} />
+            <Route path="/lojas" element={canManageStores ? <Suspense fallback={<p role="status">Carregando lojas…</p>}><Stores refresh={refresh ?? (() => {})} /></Suspense> : <Navigate to="/" replace />} />
             <Route
               path="/importar"
               element={canImport ? <ImportPage /> : <Navigate to="/" replace />}
