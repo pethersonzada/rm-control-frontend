@@ -31,6 +31,8 @@ export function TicketForm({record, onCancel}: {record?: Occurrence; onCancel: (
   const [busy,setBusy] = useState(false);
   const [error,setError] = useState("");
   const [created,setCreated] = useState<Occurrence | null>(null);
+  const [catalogNotice,setCatalogNotice] = useState("");
+  const [lookingUp,setLookingUp] = useState(false);
   const pending = useRef(false);
   const key = useRef(crypto.randomUUID());
   const sentPayload = useRef<string | null>(null);
@@ -38,6 +40,19 @@ export function TicketForm({record, onCancel}: {record?: Occurrence; onCancel: (
   const options = stores.data?.filter(s=>s.active) ?? [];
   function set<K extends keyof TicketInput>(field:K,value:TicketInput[K]) {setDraft(d=>({...d,[field]:value}));}
   function item(index:number,patch:Partial<Item>) {setDraft(d=>({...d,items:d.items.map((i,n)=>n===index?{...i,...patch}:i)}));}
+  async function lookup(index:number) {
+    if (!remote || lookingUp) return;
+    const code=draft.items[index]?.code;
+    if(!code || !/^\d{1,40}$/.test(code)) {setCatalogNotice("Informe um PLU válido.");return;}
+    setLookingUp(true);setCatalogNotice("");
+    try {
+      const found=(await remote.catalog("",0,code)).products.find(p=>p.code===code&&p.active);
+      if(!found){setCatalogNotice("PLU não encontrado no catálogo ativo. Preencha os campos manualmente.");return;}
+      setDraft(d=>({...d,items:d.items.map((i,n)=>n===index&&i.code===code?{...i,description:i.description||found.description,category:i.category||found.category,package:i.package||found.package||""}:i)}));
+      setCatalogNotice("Campos vazios preenchidos pelo catálogo. Confira antes de salvar.");
+    }catch(caught){setCatalogNotice((caught as Error).message);}
+    finally{setLookingUp(false);}
+  }
   async function submit(e:FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (pending.current || !remote) return;
@@ -89,8 +104,10 @@ export function TicketForm({record, onCancel}: {record?: Occurrence; onCancel: (
       </section>
       <section className="panel stack">
         <h2>Produtos e divergências</h2>
+        {catalogNotice && <p role="status" className="notice">{catalogNotice}</p>}
         {draft.items.map((i,n)=><fieldset key={n} className="panel stack" disabled={busy}>
           <legend>Produto {n+1}</legend>
+          <div className="actions"><button type="button" disabled={busy||lookingUp||!i.code} onClick={()=>void lookup(n)}>{lookingUp?"Consultando…":"Buscar PLU no catálogo"}</button></div>
           <div className="filter-grid">
             <label>PLU<input required inputMode="numeric" pattern="[0-9]{1,40}" value={i.code} onChange={e=>item(n,{code:e.target.value})}/></label>
             <label>Descrição<input required maxLength={500} value={i.description} onChange={e=>item(n,{description:e.target.value})}/></label>

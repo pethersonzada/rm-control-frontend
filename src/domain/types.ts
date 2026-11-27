@@ -169,3 +169,17 @@ export interface HistoryPage {
   events: HistoryEvent[];
   next_cursor: number | null;
 }
+
+
+export interface CatalogProduct {
+  code: string;
+  description: string;
+  category: string | null;
+  package: string | null;
+  reference: string;
+  active: boolean;
+}
+export interface CatalogPage {
+  products: CatalogProduct[];
+  next_cursor: number | null;
+}

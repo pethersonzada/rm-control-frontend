@@ -12,6 +12,8 @@ import type {
   AccessRequest,
   TicketInput,
   HistoryPage,
+  CatalogPage,
+  CatalogProduct,
 } from "../domain/types";
 import { exact } from "../domain/money";
 
@@ -171,6 +173,12 @@ export function api(
   }
 
   return {
+    catalog: (search: string, cursor = 0, code?: string, signal?: AbortSignal) => {
+      const params = new URLSearchParams({search,cursor:String(cursor)});
+      if(code) params.set('code',code);
+      return request<CatalogPage>('/catalog?'+params,{signal});
+    },
+    saveProduct: (product: CatalogProduct) => request<CatalogProduct>('/admin/catalog',{method:'PUT',body:JSON.stringify(product)}),
     stores: (signal?: AbortSignal) => request<Store[]>("/stores", { signal }),
     saveStore: (store: Store) => request<Store>("/admin/stores", { method: "PUT", body: JSON.stringify(store) }),
     requestAccess: () => request<{ status: string }>("/access/request", { method: "POST" }),

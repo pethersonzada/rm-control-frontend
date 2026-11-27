@@ -16,6 +16,7 @@ const FirebaseGate =
     : lazy(() => import("./pages/FirebaseGate"));
 const Users = lazy(() => import("./pages/Users"));
 const Stores = lazy(() => import("./pages/Stores"));
+const Catalog = lazy(() => import("./pages/Catalog"));
 const NewTicket = lazy(() => import("./pages/Tickets"));
 
 const pages = [
@@ -25,6 +26,7 @@ const pages = [
   ["/inventarios", "Inventários"],
   ["/usuarios", "Usuários"],
   ["/lojas", "Lojas"],
+  ["/catalogo", "Catálogo"],
 ];
 
 type Session = { remote: ReturnType<typeof api>; identity: Identity };
@@ -95,7 +97,7 @@ function Workspace({
                 ([path]) =>
                   (path !== "/importar" || canImport) &&
                   (path !== "/usuarios" || canAdmin) &&
-                  (path !== "/lojas" || canManageStores),
+                  ((path !== "/lojas" && path !== "/catalogo") || canManageStores),
               )
               .map(([path, label]) => (
                 <NavLink key={path} to={path} end className="nav-link">
@@ -146,6 +148,7 @@ function Workspace({
             <Route path="/" element={<Dashboard canImport={canImport} />} />
             <Route path="/chamados" element={<Records />} />
             <Route path="/chamados/novo" element={!demo && canImport ? <Suspense fallback={<p role="status">Carregando formulário…</p>}><NewTicket /></Suspense> : <Navigate to="/chamados" replace />} />
+            <Route path="/catalogo" element={canManageStores ? <Suspense fallback={<p role="status">Carregando catálogo…</p>}><Catalog /></Suspense> : <Navigate to="/" replace />} />
             <Route path="/lojas" element={canManageStores ? <Suspense fallback={<p role="status">Carregando lojas…</p>}><Stores refresh={refresh ?? (() => {})} /></Suspense> : <Navigate to="/" replace />} />
             <Route
               path="/importar"
