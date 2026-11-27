@@ -350,6 +350,7 @@ test("administrador cria loja, aprova conta, registra chamado e gera XLSX", asyn
   await page.getByLabel("E-mail",{exact:true}).fill(account.email);
   await page.getByLabel("Senha",{exact:true}).fill("senha-sintetica");
   await page.getByRole("button",{name:"Entrar",exact:true}).click();
+  await expect(page.getByRole("heading",{name:"Visão geral",exact:true})).toBeVisible();
   if(await page.getByRole("button",{name:"Menu",exact:true}).isVisible())await page.getByRole("button",{name:"Menu",exact:true}).click();
   await page.getByRole("link",{name:"Lojas",exact:true}).click();
   await page.getByLabel("Código da loja").fill("7");

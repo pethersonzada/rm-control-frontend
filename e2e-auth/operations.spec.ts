@@ -52,6 +52,7 @@ test("registra fornecedores, corrige, cancela, exporta e configura referências"
   await page.getByLabel("E-mail",{exact:true}).fill(account.email);
   await page.getByLabel("Senha",{exact:true}).fill("senha-sintetica");
   await page.getByRole("button",{name:"Entrar",exact:true}).click();
+  await expect(page.getByRole("heading",{name:"Visão geral",exact:true})).toBeVisible();
   if(await page.getByRole("button",{name:"Menu",exact:true}).isVisible())await page.getByRole("button",{name:"Menu",exact:true}).click();
   await page.getByRole("link",{name:"Fornecedores conferidos"}).click();
   await expect(page.getByLabel("Fornecedor",{exact:true})).toBeHidden();
