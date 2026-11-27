@@ -27,6 +27,7 @@ test("navegador, assinatura RS256, API e PostgreSQL: aprovação, chamado, forne
     await expect(operator.getByText(/Solicitação enviada|Solicitação registrada/)).toBeVisible();
     await identity(page,"owner");
     await page.getByRole("link",{name:"Lojas",exact:true}).click();
+  await page.getByRole("button",{name:"Nova loja",exact:true}).click();
     await page.getByLabel("Código da loja").fill("7");
     await page.getByLabel("Nome da loja").fill("Loja integração");
     await page.getByRole("button",{name:"Salvar loja"}).click();
@@ -62,6 +63,7 @@ test("navegador, assinatura RS256, API e PostgreSQL: aprovação, chamado, forne
     const path=await(await download).path();
     expect((await readFile(path!)).subarray(0,4).toString("hex")).toBe("504b0304");
     await operator.getByRole("link",{name:"Fornecedores conferidos"}).click();
+  await operator.getByRole("button",{name:"Nova conferência",exact:true}).click();
     await operator.getByLabel("Fornecedor",{exact:true}).fill("Fornecedor integração");
     await operator.getByLabel("Conferente",{exact:true}).fill("Conferente QA");
     await operator.getByRole("button",{name:"Registrar conferência"}).click();

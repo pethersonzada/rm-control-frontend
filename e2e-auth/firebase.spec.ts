@@ -350,24 +350,31 @@ test("administrador cria loja, aprova conta, registra chamado e gera XLSX", asyn
   await page.getByLabel("E-mail",{exact:true}).fill(account.email);
   await page.getByLabel("Senha",{exact:true}).fill("senha-sintetica");
   await page.getByRole("button",{name:"Entrar",exact:true}).click();
+  await expect(page.getByRole("heading",{name:"Visão geral",exact:true})).toBeVisible();
+  if(await page.getByRole("button",{name:"Menu",exact:true}).isVisible())await page.getByRole("button",{name:"Menu",exact:true}).click();
   await page.getByRole("link",{name:"Lojas",exact:true}).click();
+  await page.getByRole("button",{name:"Nova loja",exact:true}).click();
   await page.getByLabel("Código da loja").fill("7");
   await page.getByLabel("Nome da loja").fill("Loja QA");
   await page.getByRole("button",{name:"Salvar loja"}).click();
   await expect(page.getByRole("cell",{name:"Loja QA"})).toBeVisible();
+  if(await page.getByRole("button",{name:"Menu",exact:true}).isVisible())await page.getByRole("button",{name:"Menu",exact:true}).click();
   await page.getByRole("link",{name:"Usuários"}).click();
   await page.getByRole("button",{name:"Definir permissões"}).click();
   await page.getByLabel("Perfil").selectOption("importer");
   await page.getByLabel("7 · Loja QA").check();
   await page.getByRole("button",{name:"Salvar permissões"}).click();
   await expect(page.getByText("Nenhuma solicitação pendente.")).toBeVisible();
+  if(await page.getByRole("button",{name:"Menu",exact:true}).isVisible())await page.getByRole("button",{name:"Menu",exact:true}).click();
   await page.getByRole("link",{name:"Catálogo",exact:true}).click();
+  await page.getByRole("button",{name:"Novo produto",exact:true}).click();
   await page.getByLabel("PLU",{exact:true}).fill("000123");
   await page.getByLabel("Descrição",{exact:true}).fill("Produto QA");
   await page.getByLabel("Embalagem",{exact:true}).fill("CX");
   await page.getByLabel("Referência conferida").fill("Catálogo sintético");
   await page.getByRole("button",{name:"Salvar produto"}).click();
   await expect(page.getByRole("cell",{name:"Produto QA"})).toBeVisible();
+  if(await page.getByRole("button",{name:"Menu",exact:true}).isVisible())await page.getByRole("button",{name:"Menu",exact:true}).click();
   await page.getByRole("link",{name:"Importar dados"}).click();
   await page.getByLabel("Listagem e detalhes copiados").fill("Amostra sintética");
   await page.getByRole("button",{name:"Analisar dados"}).click();
@@ -376,6 +383,7 @@ test("administrador cria loja, aprova conta, registra chamado e gera XLSX", asyn
   await page.getByRole("button",{name:"Confirmar importação"}).click();
   await expect(page.getByText("1 chamado(s) salvo(s).")).toBeVisible();
   await expect(page.getByLabel("Listagem e detalhes copiados")).toHaveValue("");
+  if(await page.getByRole("button",{name:"Menu",exact:true}).isVisible())await page.getByRole("button",{name:"Menu",exact:true}).click();
   await page.getByRole("link",{name:"Chamados",exact:true}).click();
   await page.getByRole("link",{name:"Novo chamado"}).click();
   await page.getByLabel("Loja",{exact:true}).selectOption("7");
@@ -397,4 +405,19 @@ test("administrador cria loja, aprova conta, registra chamado e gera XLSX", asyn
   const download = page.waitForEvent("download");
   await page.getByRole("button",{name:"Gerar planilha Excel"}).click();
   expect((await download).suggestedFilename()).toBe("rm-control-chamados.xlsx");
+});
+
+
+test("login oferece tema escuro acessível e persistente",async({page})=>{
+  await page.goto("/");
+  await expect(page.getByRole("heading",{name:"Entrar",exact:true})).toBeVisible();
+  const theme=page.getByRole("combobox",{name:"Tema da interface"});
+  await theme.selectOption("dark");
+  await expect(page.locator("html")).toHaveAttribute("data-theme","dark");
+  expect((await new AxeBuilder({page}).withTags(["wcag2a","wcag2aa","wcag21a","wcag21aa"]).analyze()).violations).toEqual([]);
+  await page.reload();
+  await expect(theme).toHaveValue("dark");
+  await page.getByRole("button",{name:"Criar conta",exact:true}).click();
+  await expect(page.getByRole("heading",{name:"Criar conta",exact:true})).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("data-theme","dark");
 });

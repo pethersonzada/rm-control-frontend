@@ -26,6 +26,7 @@ export default function FirebaseGate({
   const [user, setUser] = useState<User | null>();
   const [authorized, setAuthorized] = useState<Session | null>(null);
   const [error, setError] = useState("");
+  const [accessDenied,setAccessDenied]=useState(false);
   const [checking, setChecking] = useState(false);
   const [requesting, setRequesting] = useState(false);
   const [requestNotice, setRequestNotice] = useState("");
@@ -73,6 +74,7 @@ export default function FirebaseGate({
       active = operation;
       pending.current = operation;
       setChecking(true);
+      setAccessDenied(false);
       setError("");
       const remote = api(
         (force) => {
@@ -83,6 +85,7 @@ export default function FirebaseGate({
           if (!mounted || auth.currentUser?.uid !== current.uid) return;
           client.clear();
           setAuthorized(null);
+          setAccessDenied(error.status===403);
           setError(error.message);
           if (error.status === 401) void signOut(auth).catch(() => {});
         },
@@ -108,6 +111,7 @@ export default function FirebaseGate({
           if (!operation.signal.aborted) {
             client.clear();
             setAuthorized(null);
+            setAccessDenied(caught instanceof ApiError && caught.status===403);
             if (caught instanceof ApiError && caught.status === 403) {
               void remote.requestAccess().then(response=>{
                 if(!operation.signal.aborted && auth.currentUser?.uid===current.uid) setRequestNotice(response.status==="pending"?"Solicitação registrada. Aguarde a aprovação.":response.status==="rejected"?"Acesso recusado ou desativado. Consulte o administrador.":"Conta vinculada. Verifique o acesso novamente.");
@@ -151,9 +155,9 @@ export default function FirebaseGate({
       ) : user ? (
         <>
           <header className="access-heading">
-            <h1 id="access-title">Acesso pendente</h1>
+            <h1 id="access-title">{accessDenied?"Acesso pendente":"Não foi possível verificar o acesso"}</h1>
             <p>
-              Solicite acesso para que o administrador possa liberar seu perfil e suas lojas. O UID também pode ser compartilhado diretamente com o responsável.
+              {accessDenied?"Aguarde a liberação pelo administrador. Você pode compartilhar o identificador da conta com o responsável.":"Sua sessão está conectada. Tente verificar novamente; a falha de conexão não significa que seu acesso foi removido."}
             </p>
           </header>
           {error && (
@@ -161,13 +165,13 @@ export default function FirebaseGate({
               {error}
             </p>
           )}
-          <div className="access-uid">
+          {accessDenied&&<div className="access-uid">
             <strong>UID da conta</strong>
             <code className="user-uid">{user.uid}</code>
-          </div>
+          </div>}
           {requestNotice && <p role="status" className="notice">{requestNotice}</p>}
           <div className="access-actions">
-            <button disabled={requesting} onClick={async () => {
+            {accessDenied&&<button disabled={requesting} onClick={async () => {
               setRequesting(true); setRequestNotice("");
               try {
                 const current = user;
@@ -179,7 +183,7 @@ export default function FirebaseGate({
                 if (auth.currentUser?.uid === current.uid) setRequestNotice(response.status === "pending" ? "Solicitação enviada. Aguarde a aprovação." : response.status === "approved" ? "Conta vinculada. Verifique o acesso novamente." : "Solicitação recusada ou conta desativada. Consulte o administrador.");
               } catch (caught) { setRequestNotice((caught as Error).message); }
               finally { setRequesting(false); }
-            }}>{requesting ? "Enviando…" : "Solicitar acesso"}</button>
+            }}>{requesting ? "Enviando…" : "Solicitar acesso"}</button>}
             <button
               className="primary"
               onClick={() => setAttempt((value) => value + 1)}

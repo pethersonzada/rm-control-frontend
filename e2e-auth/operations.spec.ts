@@ -52,12 +52,18 @@ test("registra fornecedores, corrige, cancela, exporta e configura referências"
   await page.getByLabel("E-mail",{exact:true}).fill(account.email);
   await page.getByLabel("Senha",{exact:true}).fill("senha-sintetica");
   await page.getByRole("button",{name:"Entrar",exact:true}).click();
+  await expect(page.getByRole("heading",{name:"Visão geral",exact:true})).toBeVisible();
+  if(await page.getByRole("button",{name:"Menu",exact:true}).isVisible())await page.getByRole("button",{name:"Menu",exact:true}).click();
   await page.getByRole("link",{name:"Fornecedores conferidos"}).click();
+  await expect(page.getByLabel("Fornecedor",{exact:true})).toBeHidden();
+  await page.getByRole("button",{name:"Nova conferência",exact:true}).click();
+  await expect(page.getByRole("heading",{name:"Histórico de fornecedores"})).toBeHidden();
   await page.getByLabel("Código do fornecedor").fill("00042");
   await page.getByLabel("Fornecedor",{exact:true}).fill("Fornecedor QA");
   await page.getByLabel("Conferente",{exact:true}).fill("Conferente A");
   await page.getByRole("button",{name:"Registrar conferência"}).click();
   await expect(page.getByText("Conferência registrada.",{exact:true})).toBeVisible();
+  await expect(page.getByLabel("Fornecedor",{exact:true})).toBeHidden();
   await expect(page.getByRole("cell",{name:"Conferente A",exact:true})).toBeVisible();
   await page.getByRole("button",{name:"Corrigir 1"}).click();
   await page.getByLabel("Conferente",{exact:true}).fill("Conferente B");
@@ -80,6 +86,7 @@ test("registra fornecedores, corrige, cancela, exporta e configura referências"
   await page.getByLabel("Incluir canceladas").check();
   await page.getByRole("button",{name:"Aplicar filtros"}).click();
   await expect(page.getByRole("cell",{name:"Cancelado",exact:true})).toBeVisible();
+  if(await page.getByRole("button",{name:"Menu",exact:true}).isVisible())await page.getByRole("button",{name:"Menu",exact:true}).click();
   await page.getByRole("link",{name:"Configurações",exact:true}).click();
   await page.getByLabel("Ativar cálculo de prazo").check();
   await page.getByLabel("Dias úteis").fill("3");
@@ -96,6 +103,7 @@ test("registra fornecedores, corrige, cancela, exporta e configura referências"
   await expect(page.getByText("Referência registrada.",{exact:true})).toBeVisible();
   await page.getByRole("button",{name:"Consultar diagnóstico"}).click();
   await expect(page.getByText("Requisições lentas",{exact:true})).toBeVisible();
+  if(await page.getByRole("button",{name:"Menu",exact:true}).isVisible())await page.getByRole("button",{name:"Menu",exact:true}).click();
   await page.getByRole("link",{name:"Chamados",exact:true}).click();
   await page.getByRole("button",{name:"90001",exact:true}).click();
   await page.getByRole("button",{name:"Conferência financeira",exact:true}).click();

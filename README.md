@@ -67,3 +67,9 @@ Antes de utilização real, valide o modelo dos arquivos e as regras com a empre
 ### Integração com API real no CI
 
 O job browser-api-postgres usa PostgreSQL descartável, checkout fixado do backend e API FastAPI local. O provedor Firebase é simulado no navegador, mas os JWTs são assinados com uma chave RSA efêmera e verificados pelo backend real. A jornada cobre solicitação/aprovação de acesso, isolamento de loja, criação de chamado, persistência após reload, download XLSX, conferência de fornecedor e upload de arquivo sintético de 14–20 MB. Nenhuma conta externa, chave de serviço ou banco hospedado é usado. A validação com Google/Firebase real e domínio publicado permanece separada.
+
+### Organização da interface
+
+Login compacto; navegação agrupada em Principal, Operação e Administração. Chamados mantém pesquisa, loja e status à vista e filtros avançados recolhidos. Fornecedores abre na consulta e oferece formulário separado de nova conferência. Inventário e importação têm passos explícitos. O ambiente continua de homologação, sem dados reais. A revisão de UX não altera autorização, APIs, schema ou regras financeiras.
+
+Tema claro, escuro ou automático disponível antes e depois do login. A preferência fica somente no navegador. O painel agrupa indicadores, situação de chamados e financeiro; os cadastros de fornecedores, lojas, produtos e usuários são separados das consultas. Testes de contraste e persistência do tema cobrem desktop e celular.

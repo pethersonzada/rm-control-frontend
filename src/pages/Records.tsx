@@ -1,5 +1,5 @@
 import { useDeferredValue, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { TicketForm } from "./Tickets";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { RecordTable } from "../components/RecordTable";
@@ -15,7 +15,8 @@ export function Records() {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Occurrence | null>(null);
   const delayed = useDeferredValue(search);
-  const [status, setStatus] = useState("");
+  const [params,setParams]=useSearchParams();
+  const [status, setStatus] = useState(()=>{const value=params.get("status")??"";return statuses.includes(value)?value:"";});
   const [store, setStore] = useState("");
   const [reason, setReason] = useState("");
   const [dateField, setDateField] = useState<Filters["date_field"]>("included");
@@ -99,9 +100,9 @@ export function Records() {
   if (editing) return <TicketForm record={editing} onCancel={()=>setEditing(null)}/>;
   return (
     <>
-      <div className="page-heading"><h1>Chamados</h1>{remote && identity?.role !== "viewer" && <Link className="primary" to="/chamados/novo">Novo chamado</Link>}</div>
-      <section className="panel stack" aria-label="Consulta de chamados">
-        <div className="filter-grid">
+      <div className="page-heading"><div><h1>Chamados</h1><p className="muted">Consulte, atualize e exporte as ocorrências.</p></div><div className="actions">{remote && identity?.role !== "viewer" && <><Link className="secondary" to="/importar">Importar histórico</Link><Link className="primary" to="/chamados/novo">Novo chamado</Link></>}</div></div>
+      <section className="panel stack records-panel" aria-label="Consulta de chamados">
+        <div className="filter-grid primary-filters">
           <label>
             Pesquisar
             <input
@@ -121,6 +122,7 @@ export function Records() {
               onChange={(event) => {
                 setCursors([0]);
                 setStatus(event.target.value);
+                setParams(event.target.value?{status:event.target.value}:{},{replace:true});
               }}
             >
               <option value="">Todos</option>
@@ -146,7 +148,10 @@ export function Records() {
               </select>
             </label>
           )}
-          <label>
+        </div>
+        <details className="progressive">
+          <summary>Mais filtros{reason||from||to||includeTests||!ascending||dateField!=="included"?" · ativos":""}</summary>
+          <div className="filter-grid"><label>
             Ordem
             <select
               value={ascending ? "ascending" : "descending"}
@@ -159,11 +164,9 @@ export function Records() {
               <option value="descending">Chamado decrescente</option>
             </select>
           </label>
-        </div>
-        <div className="filter-grid">
           <label>
             Motivo
-            <select
+            <select aria-label="Motivo"
               value={reason}
               onChange={(event) => {
                 setCursors([0]);
@@ -225,13 +228,14 @@ export function Records() {
             Incluir chamados de teste
           </label>
         )}
+        </details>
         {invalidDates && (
           <p className="error" role="alert">
             A data inicial precisa ser anterior ou igual à final.
           </p>
         )}
         <div className="actions">
-          {remote && <button className="primary" disabled={invalidDates||exporting} onClick={()=>void exportXlsx()}>Gerar planilha Excel</button>}
+          {remote && <button className="secondary" disabled={invalidDates||exporting} onClick={()=>void exportXlsx()}>Gerar planilha Excel</button>}
           <button
             className="secondary"
             onClick={() => void exportCsv()}
@@ -239,6 +243,8 @@ export function Records() {
           >
             {exporting ? "Exportando…" : "Exportar CSV"}
           </button>
+          <button type="button" className="text-action" onClick={()=>{setSearch("");setStatus("");setParams({},{replace:true});setStore("");setReason("");setDateField("included");setFrom("");setTo("");setIncludeTests(false);setAscending(true);setCursors([0]);}}>Limpar filtros</button>
+          {exporting&&<button onClick={()=>exportController?.abort()}>Cancelar exportação</button>}
         </div>
         {error && (
           <p role="alert" className="error">
@@ -257,7 +263,7 @@ export function Records() {
         />
         {query.data && (
           <>
-            <p>{data.length} chamado(s) nesta página.</p>
+            <p className="result-count">{data.length} chamado(s) nesta página.</p>
             <RecordTable
               records={data}
               showHistory={Boolean(remote)}
