@@ -27,8 +27,8 @@ export default function FinanceChart({
       <ResponsiveContainer width="100%" height={220} minWidth={0}>
         <BarChart data={values} accessibilityLayer={false}>
           <CartesianGrid stroke="var(--line)" vertical={false} />
-          <XAxis dataKey="name" tick={{ fill: "var(--navy)", fontSize: 13 }} />
-          <YAxis width={64} tick={{ fill: "var(--navy)", fontSize: 12 }} />
+          <XAxis dataKey="name" tick={{ fill: "var(--ink)", fontSize: 13 }} />
+          <YAxis width={64} tick={{ fill: "var(--ink)", fontSize: 12 }} />
           <Tooltip
             formatter={(_value, _name, entry) => [
               counts ? entry.payload.total : money(entry.payload.total),
@@ -37,7 +37,7 @@ export default function FinanceChart({
           />
           <Bar
             dataKey="plotted"
-            fill={counts ? "var(--navy)" : "var(--accent)"}
+            fill={counts ? "var(--accent)" : "var(--chart-secondary)"}
             maxBarSize={60}
             isAnimationActive={false}
           />
