@@ -68,7 +68,7 @@ export function RecordTable({
                   <td>{record.included_at || "—"}</td>
                   <td>{record.received_at || "—"}</td>
                   <td>
-                    <span className="status">{record.status}</span>
+                    <span className={"status status-"+record.status.toLowerCase().replace(/[^a-z]+/g,"-")}>{record.status}</span>
                     {record.is_test && <small>Teste</small>}
                     {record.due_at && (
                       <small>
@@ -133,7 +133,7 @@ export function RecordTable({
                         {onStatus && (
                           <StatusForm record={record} save={onStatus} />
                         )}
-                        <ul>
+                        <h3>Produtos do chamado</h3><ul className="record-items">
                           {record.items.map((item, index) => (
                             <li key={index}>
                               {item.code} · {item.description} · {item.quantity}{" "}

@@ -99,9 +99,9 @@ export function Records() {
   if (editing) return <TicketForm record={editing} onCancel={()=>setEditing(null)}/>;
   return (
     <>
-      <div className="page-heading"><h1>Chamados</h1>{remote && identity?.role !== "viewer" && <Link className="primary" to="/chamados/novo">Novo chamado</Link>}</div>
+      <div className="page-heading"><div><h1>Chamados</h1><p className="muted">Consulte, atualize e exporte as ocorrências.</p></div><div className="actions">{remote && identity?.role !== "viewer" && <><Link className="secondary" to="/importar">Importar histórico</Link><Link className="primary" to="/chamados/novo">Novo chamado</Link></>}</div></div>
       <section className="panel stack" aria-label="Consulta de chamados">
-        <div className="filter-grid">
+        <div className="filter-grid primary-filters">
           <label>
             Pesquisar
             <input
@@ -146,7 +146,10 @@ export function Records() {
               </select>
             </label>
           )}
-          <label>
+        </div>
+        <details className="progressive">
+          <summary>Mais filtros{reason||from||to||includeTests||!ascending||dateField!=="included"?" · ativos":""}</summary>
+          <div className="filter-grid"><label>
             Ordem
             <select
               value={ascending ? "ascending" : "descending"}
@@ -225,13 +228,14 @@ export function Records() {
             Incluir chamados de teste
           </label>
         )}
+        </details>
         {invalidDates && (
           <p className="error" role="alert">
             A data inicial precisa ser anterior ou igual à final.
           </p>
         )}
         <div className="actions">
-          {remote && <button className="primary" disabled={invalidDates||exporting} onClick={()=>void exportXlsx()}>Gerar planilha Excel</button>}
+          {remote && <button className="secondary" disabled={invalidDates||exporting} onClick={()=>void exportXlsx()}>Gerar planilha Excel</button>}
           <button
             className="secondary"
             onClick={() => void exportCsv()}
@@ -239,6 +243,8 @@ export function Records() {
           >
             {exporting ? "Exportando…" : "Exportar CSV"}
           </button>
+          <button type="button" className="text-action" onClick={()=>{setSearch("");setStatus("");setStore("");setReason("");setDateField("included");setFrom("");setTo("");setIncludeTests(false);setAscending(true);setCursors([0]);}}>Limpar filtros</button>
+          {exporting&&<button onClick={()=>exportController?.abort()}>Cancelar exportação</button>}
         </div>
         {error && (
           <p role="alert" className="error">

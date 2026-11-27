@@ -53,6 +53,7 @@ test("registra fornecedores, corrige, cancela, exporta e configura referências"
   await page.getByLabel("Senha",{exact:true}).fill("senha-sintetica");
   await page.getByRole("button",{name:"Entrar",exact:true}).click();
   await page.getByRole("link",{name:"Fornecedores conferidos"}).click();
+  await page.getByRole("button",{name:"Nova conferência",exact:true}).click();
   await page.getByLabel("Código do fornecedor").fill("00042");
   await page.getByLabel("Fornecedor",{exact:true}).fill("Fornecedor QA");
   await page.getByLabel("Conferente",{exact:true}).fill("Conferente A");

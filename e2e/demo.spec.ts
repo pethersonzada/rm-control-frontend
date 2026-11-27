@@ -22,6 +22,7 @@ test("importa, atualiza, filtra, exporta, concilia e limpa sem enviar dados", as
   await expect(
     page.getByRole("heading", { name: "Visão geral" }),
   ).toBeVisible();
+  if(await page.getByRole("button",{name:"Menu",exact:true}).isVisible())await page.getByRole("button",{name:"Menu",exact:true}).click();
   await page.getByRole("link", { name: "Importar dados" }).click();
   await expect(page.locator('input[type="file"],textarea')).toHaveCount(0);
   async function accept(scenario: string) {
@@ -33,6 +34,7 @@ test("importa, atualiza, filtra, exporta, concilia e limpa sem enviar dados", as
   await accept("list");
   await accept("details");
   await accept("history");
+  if(await page.getByRole("button",{name:"Menu",exact:true}).isVisible())await page.getByRole("button",{name:"Menu",exact:true}).click();
   await page.getByRole("link", { name: "Chamados" }).click();
   await page.reload();
   await expect(page.getByRole("button", { name: "90001" })).toBeVisible();
@@ -48,6 +50,7 @@ test("importa, atualiza, filtra, exporta, concilia e limpa sem enviar dados", as
   const contents = await readFile((await download.path())!, "utf8");
   expect(contents).toContain("90001");
   expect(contents).not.toContain("90002");
+  if(await page.getByRole("button",{name:"Menu",exact:true}).isVisible())await page.getByRole("button",{name:"Menu",exact:true}).click();
   await page.getByRole("link", { name: "Inventários" }).click();
   await page.getByRole("button", { name: "Cruzar chamados pendentes" }).click();
   await expect(page.getByText(/90002 · SOBRA/)).toBeVisible();
@@ -57,6 +60,7 @@ test("importa, atualiza, filtra, exporta, concilia e limpa sem enviar dados", as
   await expect(isolated.getByText("Nenhum chamado encontrado.")).toBeVisible();
   await isolated.close();
   await page.getByRole("button", { name: "Limpar demonstração" }).click();
+  if(await page.getByRole("button",{name:"Menu",exact:true}).isVisible())await page.getByRole("button",{name:"Menu",exact:true}).click();
   await page.getByRole("link", { name: "Chamados" }).click();
   await expect(page.getByText("Nenhum chamado encontrado.")).toBeVisible();
   expect(network).toEqual([]);

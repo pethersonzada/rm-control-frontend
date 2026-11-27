@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { NavLink, Navigate, Route, Routes } from "react-router-dom";
+import { NavLink, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import type { Identity } from "./domain/types";
 import { WorkspaceContext } from "./hooks/workspace";
 import { Dashboard } from "./pages/Dashboard";
@@ -21,17 +21,13 @@ const Suppliers = lazy(() => import("./pages/Suppliers"));
 const Catalog = lazy(() => import("./pages/Catalog"));
 const NewTicket = lazy(() => import("./pages/Tickets"));
 
-const pages = [
-  ["/", "Visão geral"],
-  ["/chamados", "Chamados"],
-  ["/importar", "Importar dados"],
-  ["/inventarios", "Inventários"],
-  ["/fornecedores", "Fornecedores conferidos"],
-  ["/usuarios", "Usuários"],
-  ["/lojas", "Lojas"],
-  ["/catalogo", "Catálogo"],
-  ["/configuracoes", "Configurações"],
+const groups = [
+  {title:"Principal",pages:[["/","Visão geral"]]},
+  {title:"Operação",pages:[["/chamados","Chamados"],["/fornecedores","Fornecedores conferidos"],["/inventarios","Inventários"],["/importar","Importar dados"]]},
+  {title:"Administração",pages:[["/usuarios","Usuários"],["/lojas","Lojas"],["/catalogo","Catálogo"],["/configuracoes","Configurações"]]},
 ];
+const roles:Record<string,string>={admin:"Administrador",importer:"Operador",viewer:"Consulta"};
+
 
 type Session = { remote: ReturnType<typeof api>; identity: Identity };
 
@@ -63,6 +59,8 @@ function Workspace({
   refresh?: () => void;
 }) {
   const client = useQueryClient();
+  const location=useLocation();
+  const [navOpen,setNavOpen]=useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [revision, setRevision] = useState(0);
@@ -91,24 +89,21 @@ function Workspace({
           Ir para o conteúdo
         </a>
         <aside>
-          <div className="brand">
-            <img className="brand-logo" src="/logo-mono-com-nome.png" alt="RM Control" />
-            <small>Operações logísticas</small>
+          <div className="sidebar-top">
+            <div className="brand"><img className="brand-logo" src="/logo-mono-com-nome.png" alt="RM Control" /></div>
+            <button className="mobile-menu" aria-expanded={navOpen} aria-controls="workspace-nav" onClick={()=>setNavOpen(v=>!v)}>Menu</button>
           </div>
-          <nav aria-label="Navegação principal">
-            {pages
-              .filter(
-                ([path]) =>
-                  (path !== "/importar" || canImport) &&
-                  (path !== "/usuarios" || canAdmin) &&
-                  (path !== "/fornecedores" || !demo) &&
-                  ((path !== "/lojas" && path !== "/catalogo" && path !== "/configuracoes") || canManageStores),
-              )
-              .map(([path, label]) => (
-                <NavLink key={path} to={path} end className="nav-link">
-                  {label}
-                </NavLink>
-              ))}
+          <nav id="workspace-nav" className={navOpen?"nav-open":""} aria-label="Navegação principal">
+            {groups.map(group=>{
+              const links=group.pages.filter(([path])=>
+                (path!=="/importar"||canImport)&&(path!=="/usuarios"||canAdmin)&&
+                (path!=="/fornecedores"||!demo)&&
+                (!["/lojas","/catalogo","/configuracoes"].includes(path)||canManageStores));
+              return links.length>0&&<div className="nav-group" key={group.title}>
+                <p className="nav-caption">{group.title}</p>
+                {links.map(([path,label])=><NavLink key={path} to={path} end={path==="/"} onClick={()=>setNavOpen(false)} className="nav-link">{label}</NavLink>)}
+              </div>;
+            })}
           </nav>
           <div className="aside-bottom">
             {demo ? (
@@ -124,14 +119,8 @@ function Workspace({
         </aside>
         <main id="conteudo" tabIndex={-1}>
           <header className="workspace-header">
-            <span>
-              {demo ? "Demonstração" : session?.identity.organization}
-            </span>
-            {session && (
-              <span>
-                {session.identity.subject} · {session.identity.role}
-              </span>
-            )}
+            <span className="workspace-breadcrumb">{location.pathname==="/"?"Início":groups.find(g=>g.pages.some(([p])=>p!=="/"&&location.pathname.startsWith(p)))?.title??"Início"}</span>
+            <span className="workspace-account">{demo?"Demonstração":`Homologação · ${roles[session?.identity.role??""]??"Usuário"} · Loja${(session?.identity.stores.length??0)>1?"s":""} ${session?.identity.stores.join(", ")||"—"}`}</span>
           </header>
           {demo && (
             <p className="demo-notice">

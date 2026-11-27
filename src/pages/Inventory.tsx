@@ -61,9 +61,9 @@ export function Inventory() {
 
   return (
     <>
-      <h1>Inventários</h1>
+      <div><h1>Inventários</h1><p className="muted">Compare divergências do inventário com chamados pendentes.</p></div>
       <form className="panel stack" onSubmit={reconcile}>
-        <h2>Conferência de divergências</h2>
+        <h2><span className="step-number">1</span> Informar divergências</h2>
         {remote ? (
           <>
             <label htmlFor="inventory-store">Loja</label>
@@ -107,7 +107,7 @@ export function Inventory() {
       </form>
       {result && (
         <section className="panel stack">
-          <h2>Resultado da conferência</h2>
+          <h2><span className="step-number">2</span> Resultado da conferência</h2>
           <p>{result.note}</p>
           <div
             className="table-wrap"

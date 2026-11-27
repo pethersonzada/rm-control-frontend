@@ -19,13 +19,14 @@ export function Dashboard({ canImport }: { canImport: boolean }) {
   return (
     <>
       <div className="page-heading">
-        <h1>Visão geral</h1>
+        <div><h1>Visão geral</h1><p className="muted">Acompanhe as pendências do recebimento.</p></div>
         {canImport && (
           <Link className="primary" to={remote ? "/chamados/novo" : "/importar"}>
             {remote ? "Novo chamado" : "Nova importação"}
           </Link>
         )}
       </div>
+      <section className="quick-actions" aria-label="Atalhos de trabalho"><Link to="/chamados"><strong>Consultar chamados</strong><small>Pesquisar e acompanhar divergências</small></Link>{remote&&<Link to="/fornecedores"><strong>Conferências</strong><small>Consultar fornecedores recebidos</small></Link>}<Link to="/inventarios"><strong>Conferir inventário</strong><small>Cruzar divergências e chamados</small></Link></section>
       <QueryState
         loading={query.isPending}
         error={query.error}
@@ -34,25 +35,25 @@ export function Dashboard({ canImport }: { canImport: boolean }) {
       {summary && (
         <>
           <section className="panel stack">
-            <h2>Operação</h2>
+            <h2>Situação dos chamados</h2>
             <dl className="metrics">
               <div>
                 <dt>Chamados</dt>
                 <dd>{summary.occurrences}</dd>
               </div>
               <div>
-                <dt>Itens sem valor informado</dt>
-                <dd>{summary.items_without_value}</dd>
+                <dt>Pendentes</dt>
+                <dd>{summary.status_counts.PENDENTE??0}</dd>
               </div>
-              {summary.items_unknown_reason ? <div><dt>Itens com motivo não classificado</dt><dd>{summary.items_unknown_reason}</dd></div> : null}
-              {Object.entries(summary.status_counts).map(([status, count]) => (
+              
+              {Object.entries(summary.status_counts).filter(([status])=>status!=="PENDENTE").map(([status, count]) => (
                 <div key={status}>
                   <dt>{status}</dt>
                   <dd>{count}</dd>
                 </div>
               ))}
             </dl>
-            {Object.keys(summary.status_counts).length > 0 && (
+            {Object.keys(summary.status_counts).length > 0 && (<details className="progressive"><summary>Ver gráfico por status</summary>
               <Suspense fallback={null}>
                 <FinanceChart
                   totals={Object.fromEntries(
@@ -62,12 +63,13 @@ export function Dashboard({ canImport }: { canImport: boolean }) {
                   )}
                   counts
                 />
-              </Suspense>
+              </Suspense></details>
             )}
           </section>
           {remote && <section className="panel stack"><h2>Prazos dos chamados pendentes</h2>{summary.deadline_counts ? <dl className="metrics"><div><dt>Dentro do prazo</dt><dd>{summary.deadline_counts.within}</dd></div><div><dt>Prazo decorrido</dt><dd>{summary.deadline_counts.overdue}</dd></div><div><dt>Data insuficiente</dt><dd>{summary.deadline_counts.missing_date}</dd></div></dl>:<p className="muted">Calendário operacional ainda não configurado.</p>}</section>}
           <section className="panel stack">
             <h2>Financeiro</h2>
+            <p className="muted">Valores informados e conferidos. Dados ausentes não são estimados.</p>
             <dl className="metrics">
               {Object.entries(summary.totals_by_reason).map(
                 ([reason, total]) => (
@@ -94,12 +96,12 @@ export function Dashboard({ canImport }: { canImport: boolean }) {
                 <dd>{money(summary.pending)}</dd>{summary.financial_counts&&<small>{summary.financial_counts.pending} chamados informados</small>}
               </div>
             </dl>
-            <Suspense
+            <details className="progressive"><summary>Ver gráfico e detalhes dos valores</summary><Suspense
               fallback={<div className="skeleton">Carregando gráfico…</div>}
             >
               <FinanceChart totals={summary.totals_by_reason} />
             </Suspense>
-            <p className="muted">{summary.note}</p>
+            <p className="muted">{summary.note}</p><p className="muted">Itens sem valor: {summary.items_without_value}. Itens com motivo não classificado: {summary.items_unknown_reason??0}.</p></details>
           </section>
         </>
       )}

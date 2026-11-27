@@ -90,7 +90,7 @@ export function TicketForm({record, onCancel}: {record?: Occurrence; onCancel: (
     <p className="muted">Registre a ocorrência no RM Control. O chamado oficial em outro sistema deve ser tratado separadamente.</p>
     <form className="stack" onSubmit={submit}>
       <section className="panel stack">
-        <h2>Dados da ocorrência</h2>
+        <h2><span className="step-number">1</span> Dados da ocorrência</h2>
         <QueryState loading={stores.isPending} error={stores.error} retry={()=>void stores.refetch()}/>
         <fieldset disabled={busy} className="filter-grid">
           <label>Loja<select aria-label="Loja" value={draft.destination} onChange={e=>set("destination",e.target.value)} required disabled={Boolean(record)}><option value="">Selecione</option>{options.map(s=><option key={s.code} value={s.code}>{s.code} · {s.name}</option>)}{record && !options.some(s=>s.code===record.destination)&&<option value={record.destination}>{record.destination}</option>}</select></label>
@@ -103,9 +103,9 @@ export function TicketForm({record, onCancel}: {record?: Occurrence; onCancel: (
         </fieldset>
       </section>
       <section className="panel stack">
-        <h2>Produtos e divergências</h2>
+        <h2><span className="step-number">2</span> Produtos e divergências</h2>
         {catalogNotice && <p role="status" className="notice">{catalogNotice}</p>}
-        {draft.items.map((i,n)=><fieldset key={n} className="panel stack" disabled={busy}>
+        {draft.items.map((i,n)=><fieldset key={n} className="product-form stack" disabled={busy}>
           <legend>Produto {n+1}</legend>
           <div className="actions"><button type="button" disabled={busy||lookingUp||!i.code} onClick={()=>void lookup(n)}>{lookingUp?"Consultando…":"Buscar PLU no catálogo"}</button></div>
           <div className="filter-grid">
@@ -122,7 +122,7 @@ export function TicketForm({record, onCancel}: {record?: Occurrence; onCancel: (
         <button type="button" disabled={busy||draft.items.length>=500} onClick={()=>set("items",[...draft.items,emptyItem()])}>Adicionar produto</button>
       </section>
       <section className="panel stack">
-        <h2>Notas fiscais</h2>
+        <h2><span className="step-number">3</span> Notas fiscais <small className="inline-note">Opcional</small></h2>
         {draft.invoices.map((i,n)=><fieldset key={n} disabled={busy} className="filter-grid">
           <label>Número NF {n+1}<input required inputMode="numeric" pattern="[0-9]{1,20}" value={i.number} onChange={e=>set("invoices",draft.invoices.map((v,x)=>x===n?{...v,number:e.target.value}:v))}/></label>
           <label>Série NF {n+1}<input required inputMode="numeric" pattern="[0-9]{1,10}" value={i.series} onChange={e=>set("invoices",draft.invoices.map((v,x)=>x===n?{...v,series:e.target.value}:v))}/></label>
@@ -131,7 +131,7 @@ export function TicketForm({record, onCancel}: {record?: Occurrence; onCancel: (
         <button type="button" disabled={busy||draft.invoices.length>=100} onClick={()=>set("invoices",[...draft.invoices,{number:"",series:""}])}>Adicionar nota fiscal</button>
       </section>
       {error&&<p role="alert" className="error">{error}</p>}
-      <div className="actions"><button className="primary" disabled={busy||stores.isPending||(!record&&!options.length)}>{busy?"Salvando…":record?"Salvar alterações":"Salvar chamado"}</button><button type="button" onClick={onCancel} disabled={busy}>Cancelar</button></div>
+      <div className="actions form-footer"><button className="primary" disabled={busy||stores.isPending||(!record&&!options.length)}>{busy?"Salvando…":record?"Salvar alterações":"Salvar chamado"}</button><button type="button" onClick={onCancel} disabled={busy}>Cancelar</button></div>
     </form>
   </>;
 }

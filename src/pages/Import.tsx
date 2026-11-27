@@ -139,8 +139,9 @@ export function ImportPage() {
 
   return (
     <>
-      <h1>Importar dados</h1>
+      <div className="page-heading"><div><h1>Importar dados</h1><p className="muted">Traga chamados existentes. Revise a prévia antes de salvar.</p></div></div>
       <form ref={form} className="panel stack" onSubmit={analyze}>
+        <h2><span className="step-number">1</span> Escolher origem e enviar dados</h2>
         <fieldset disabled={busy !== null || sent.current}>
           {!remote ? (
             <>
@@ -225,7 +226,7 @@ export function ImportPage() {
                     onChange={clear}
                   />
                   {file && <p className="muted">{file.name} · {(file.size/1_000_000).toFixed(2)} MB</p>}
-                  <details><summary>Mapear cabeçalhos diferentes (opcional)</summary><p className="muted">Informe o título exato da sua planilha somente para colunas que têm outro nome.</p><div className="filter-grid">{columns.map(column=><label key={column}>{column}<input value={mapping[column]??""} maxLength={200} onChange={e=>{setMapping({...mapping,[column]:e.target.value});clear();}}/></label>)}</div></details>
+                  <details className="progressive"><summary>Mapear cabeçalhos diferentes (opcional)</summary><p className="muted">Informe o título exato da sua planilha somente para colunas que têm outro nome.</p><div className="filter-grid">{columns.map(column=><label key={column}>{column}<input value={mapping[column]??""} maxLength={200} onChange={e=>{setMapping({...mapping,[column]:e.target.value});clear();}}/></label>)}</div></details>
                   <label className="checkbox">
                     <input type="checkbox" name="partial" onChange={clear} />
                     Excluir chamados com conflito e importar as linhas válidas
@@ -266,7 +267,7 @@ export function ImportPage() {
       </form>
       {preview && (
         <section className="panel stack" aria-label="Prévia">
-          <h2>Conferência da importação</h2>
+          <h2><span className="step-number" aria-hidden="true">2</span> Conferência da importação</h2>
           <p>
             {preview.records.length} chamado(s) reconhecido(s)
             {preview.sheet ? ` na aba ${preview.sheet}` : ""}.

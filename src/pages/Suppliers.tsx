@@ -37,6 +37,7 @@ export default function Suppliers(){
   const client=useQueryClient();
   const writable=identity?.role==="admin"||identity?.role==="importer";
   const [draft,setDraft]=useState(()=>blank(identity?.stores[0]??""));
+  const [showForm,setShowForm]=useState(false);
   const [editing,setEditing]=useState<SupplierCheck|null>(null);
   const [changeReason,setChangeReason]=useState("");
   const [cancelled,setCancelled]=useState(false);
@@ -65,7 +66,7 @@ export default function Suppliers(){
   }
   function startEdit(row:SupplierCheck){
     if(uncertain&&!window.confirm("A tentativa anterior pode ter sido gravada. Descartar o formulário?"))return;
-    reset();setError("");setNotice("");setEditing(row);
+    reset();setError("");setNotice("");setEditing(row);setShowForm(true);
     setDraft({store:row.store,supplier_code:row.supplier_code,supplier_name:row.supplier_name,checker:row.checker,checked_at:localDate(row.checked_at),reference:row.reference,notes:row.notes});
     setHistory(null);
   }
@@ -82,7 +83,7 @@ export default function Suppliers(){
       if(editing)await remote.editSupplierCheck(editing.id,payload,editing.revision,!cancelled,changeReason.trim());
       else await remote.createSupplierCheck(payload,key.current);
       setNotice(editing?"Conferência atualizada.":"Conferência registrada.");
-      reset();setCursors([0]);await client.invalidateQueries({queryKey:["supplier-checks"]});await client.invalidateQueries({queryKey:["supplier-history"]});
+      reset();setShowForm(false);setCursors([0]);await client.invalidateQueries({queryKey:["supplier-checks"]});await client.invalidateQueries({queryKey:["supplier-history"]});
     }catch(caught){
       if(!editing && caught instanceof ApiError && [400,401,403,413,422,429].includes(caught.status)){sent.current=null;setUncertain(false);}
       else if(!editing&&sent.current)setUncertain(true);
@@ -102,10 +103,9 @@ export default function Suppliers(){
     finally{setExporting(false);downloadController.current=null;}
   }
   return <>
-    <h1>Fornecedores conferidos</h1>
-    <p className="muted">Registre somente conferências realizadas. Cada entrega pode ter um registro próprio. O nome do conferente pode ser diferente da pessoa que registra.</p>
-    {writable&&<form className="panel stack" onSubmit={submit}>
-      <h2>{editing?"Corrigir conferência "+editing.id:"Nova conferência"}</h2>
+    <div className="page-heading"><div><h1>Fornecedores conferidos</h1><p className="muted">Consulte as entregas já conferidas por loja e conferente.</p></div>{writable&&!showForm&&<button className="primary" onClick={()=>{reset();setError("");setNotice("");setHistory(null);setShowForm(true);}}>Nova conferência</button>}</div>
+    {writable&&showForm&&<form className="panel stack" onSubmit={submit}>
+      <h2>{editing?"Corrigir conferência "+editing.id:"Nova conferência"}</h2><p className="muted">Registre uma entrega já conferida. Informe quem realizou a conferência.</p>
       <QueryState loading={stores.isPending} error={stores.error} retry={()=>void stores.refetch()}/>
       <fieldset disabled={busy||uncertain} className="filter-grid">
         <label>Loja<select aria-label="Loja da conferência" required disabled={!!editing} value={draft.store} onChange={e=>set("store",e.target.value)}><option value="">Selecione</option>{options.map(s=><option key={s.code} value={s.code}>{s.code} · {s.name}</option>)}</select></label>
@@ -119,11 +119,11 @@ export default function Suppliers(){
       </fieldset>
       {uncertain&&<p role="status">A gravação pode ter sido concluída. Reenvie a mesma solicitação ou confira a listagem.</p>}
       <div className="actions"><button className="primary" disabled={busy||!options.length}>{busy?"Salvando…":uncertain?"Reenviar registro":editing?"Salvar alteração":"Registrar conferência"}</button>
-        {(editing||uncertain)&&<button type="button" disabled={busy} onClick={()=>{if(!uncertain||window.confirm("Confira a listagem antes de criar outro registro. Descartar?"))reset();}}>Descartar formulário</button>}</div>
+        <button type="button" disabled={busy} onClick={()=>{if(!uncertain||window.confirm("Confira a listagem antes de criar outro registro. Descartar?")){reset();setShowForm(false);setError("");}}}>Descartar formulário</button></div>
     </form>}
     {notice&&<p role="status" className="notice">{notice}</p>}
     {error&&<p role="alert" className="error">{error}</p>}
-    <section className="panel stack">
+    {!showForm&&<section className="panel stack">
       <h2>Histórico de fornecedores</h2>
       <form className="stack" onSubmit={e=>{e.preventDefault();setApplied({...filters});setCursors([0]);setHistory(null);}}>
         <div className="filter-grid">
@@ -145,7 +145,7 @@ export default function Suppliers(){
         <td><div className="actions"><button onClick={()=>setHistory(row)}>Histórico {row.id}</button>{writable&&row.active&&(identity?.role==="admin"||row.created_by===identity?.subject)&&<button disabled={busy} onClick={()=>startEdit(row)}>Corrigir {row.id}</button>}</div></td>
       </tr>)}</tbody></table></div>
       <div className="actions"><button disabled={cursors.length===1} onClick={()=>setCursors(c=>c.slice(0,-1))}>Anterior</button><button disabled={list.data?.next_cursor==null} onClick={()=>{if(list.data?.next_cursor!=null)setCursors(c=>[...c,list.data!.next_cursor!]);}}>Próxima</button></div>
-    </section>
-    {history&&<History key={history.id} row={history} onClose={()=>setHistory(null)}/>}
+    </section>}
+    {!showForm&&history&&<History key={history.id} row={history} onClose={()=>setHistory(null)}/>}
   </>;
 }
