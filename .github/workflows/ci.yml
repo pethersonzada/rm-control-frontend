@@ -42,8 +42,6 @@ jobs:
       RM_MODE: local
       RM_FIREBASE_PROJECT_ID: rm-control-test
       CORS_ORIGINS: http://127.0.0.1:4175
-      RM_BACKEND_DIR: ${{ runner.temp }}/rm-backend
-      RM_INTEGRATION_FIXTURES: ${{ runner.temp }}/rm-fixtures
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
@@ -52,7 +50,11 @@ jobs:
           ref: 66e7604613982fcb96f8d9e47edd8ee2311bb875
           path: integration-backend
           persist-credentials: false
-      - run: mv integration-backend "$RM_BACKEND_DIR"
+      - name: Prepare isolated paths
+        run: |
+          echo "RM_BACKEND_DIR=$RUNNER_TEMP/rm-backend" >> "$GITHUB_ENV"
+          echo "RM_INTEGRATION_FIXTURES=$RUNNER_TEMP/rm-fixtures" >> "$GITHUB_ENV"
+          mv integration-backend "$RUNNER_TEMP/rm-backend"
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
