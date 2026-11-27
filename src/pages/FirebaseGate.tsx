@@ -18,7 +18,7 @@ let authInstance: Auth | undefined;
 export default function FirebaseGate({
   children,
 }: {
-  children: (session: Session, logout: () => void) => ReactNode;
+  children: (session: Session, logout: () => void, refresh: () => void) => ReactNode;
 }) {
   const client = useQueryClient();
   const [auth, setAuth] = useState<Auth>();
@@ -27,6 +27,8 @@ export default function FirebaseGate({
   const [authorized, setAuthorized] = useState<Session | null>(null);
   const [error, setError] = useState("");
   const [checking, setChecking] = useState(false);
+  const [requesting, setRequesting] = useState(false);
+  const [requestNotice, setRequestNotice] = useState("");
   const [attempt, setAttempt] = useState(0);
   const uid = useRef<string | null>(null);
   const pending = useRef<AbortController | null>(null);
@@ -59,6 +61,7 @@ export default function FirebaseGate({
       setUser(current);
       if (uid.current !== (current?.uid ?? null)) {
         uid.current = current?.uid ?? null;
+        setRequestNotice("");
         client.clear();
         setAuthorized(null);
       }
@@ -123,7 +126,7 @@ export default function FirebaseGate({
     };
   }, [auth, attempt, client]);
 
-  if (authorized && user) return children(authorized, logout);
+  if (authorized && user) return children(authorized, logout, () => setAttempt(value => value + 1));
   return (
     <AccessLayout>
       {fatal ? (
@@ -145,8 +148,7 @@ export default function FirebaseGate({
           <header className="access-heading">
             <h1 id="access-title">Acesso pendente</h1>
             <p>
-              Compartilhe seu UID com o administrador do RM Control para
-              solicitar acesso.
+              Solicite acesso para que o administrador possa liberar seu perfil e suas lojas. O UID também pode ser compartilhado diretamente com o responsável.
             </p>
           </header>
           {error && (
@@ -158,7 +160,21 @@ export default function FirebaseGate({
             <strong>UID da conta</strong>
             <code className="user-uid">{user.uid}</code>
           </div>
+          {requestNotice && <p role="status" className="notice">{requestNotice}</p>}
           <div className="access-actions">
+            <button disabled={requesting} onClick={async () => {
+              setRequesting(true); setRequestNotice("");
+              try {
+                const current = user;
+                const remote = api(force => {
+                  if (auth.currentUser?.uid !== current.uid) throw new ApiError(401);
+                  return current.getIdToken(force);
+                });
+                const response = await remote.requestAccess();
+                if (auth.currentUser?.uid === current.uid) setRequestNotice(response.status === "pending" ? "Solicitação enviada. Aguarde a aprovação." : response.status === "approved" ? "Conta vinculada. Verifique o acesso novamente." : "Solicitação recusada ou conta desativada. Consulte o administrador.");
+              } catch (caught) { setRequestNotice((caught as Error).message); }
+              finally { setRequesting(false); }
+            }}>{requesting ? "Enviando…" : "Solicitar acesso"}</button>
             <button
               className="primary"
               onClick={() => setAttempt((value) => value + 1)}

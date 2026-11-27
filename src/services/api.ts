@@ -8,6 +8,9 @@ import type {
   Preview,
   RecordPage,
   Summary,
+  Store,
+  AccessRequest,
+  TicketInput,
 } from "../domain/types";
 import { exact } from "../domain/money";
 
@@ -103,7 +106,7 @@ export function api(
   token: (force?: boolean) => Promise<string> | string,
   onUnauthorized?: (error: ApiError) => void,
 ) {
-  async function request<T>(path: string, options: RequestInit = {}) {
+  async function request<T>(path: string, options: RequestInit = {}, binary = false) {
     const signal = options.signal
       ? AbortSignal.any([options.signal, AbortSignal.timeout(90_000)])
       : AbortSignal.timeout(90_000);
@@ -150,6 +153,7 @@ export function api(
         new ApiError(403, "Conta sem autorização para acessar o RM Control."),
       );
     }
+    if (binary && response.ok) return (await response.blob()) as T;
     return result<T>(response);
   }
 
@@ -166,6 +170,24 @@ export function api(
   }
 
   return {
+    stores: (signal?: AbortSignal) => request<Store[]>("/stores", { signal }),
+    saveStore: (store: Store) => request<Store>("/admin/stores", { method: "PUT", body: JSON.stringify(store) }),
+    requestAccess: () => request<{ status: string }>("/access/request", { method: "POST" }),
+    accessRequests: (signal?: AbortSignal) => request<AccessRequest[]>("/admin/access-requests", { signal }),
+    rejectAccess: (uid: string) => request<{status: string}>("/admin/access-requests/" + encodeURIComponent(uid) + "/reject", { method: "POST" }),
+    createTicket: (ticket: TicketInput, key: string) => request<Occurrence>("/tickets", {
+      method: "POST", body: JSON.stringify(ticket), headers: {"Idempotency-Key": key},
+    }),
+    editTicket: (code: string, ticket: TicketInput, revision: number) => request<Occurrence>("/tickets/" + encodeURIComponent(code), {
+      method: "PUT", body: JSON.stringify({...ticket, revision}),
+    }),
+    exportWorkbook: (filters: Filters, signal?: AbortSignal) => {
+      const {from_date, to_date, include_tests, ...remaining} = filters;
+      const params = new URLSearchParams({...remaining, include_tests: String(include_tests)});
+      if (from_date) params.set("from_date", from_date);
+      if (to_date) params.set("to_date", to_date);
+      return request<Blob>("/reports/chamados.xlsx?" + params, {signal}, true);
+    },
     users: (signal?: AbortSignal) =>
       request<Member[]>("/admin/users", { signal }),
     saveUser: (member: Member) =>

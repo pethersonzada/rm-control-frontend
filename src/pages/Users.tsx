@@ -21,12 +21,16 @@ export default function Users() {
     queryFn: ({ signal }) => remote!.users(signal),
     enabled: Boolean(remote),
   });
+  const stores = useQuery({queryKey:["stores"], queryFn:({signal})=>remote!.stores(signal), enabled: Boolean(remote)});
+  const requests = useQuery({queryKey:["access-requests"], queryFn:({signal})=>remote!.accessRequests(signal), enabled: Boolean(remote && identity?.can_delegate_admin)});
+  const reject = useMutation({mutationFn:(uid:string)=>remote!.rejectAccess(uid), onSuccess:()=>client.invalidateQueries({queryKey:["access-requests"]})});
   const save = useMutation({
     mutationFn: (member: Member) => remote!.saveUser(member),
     onSuccess: async () => {
       setDraft(empty);
       setSelected(false);
       await client.invalidateQueries({ queryKey: ["users"] });
+      await client.invalidateQueries({ queryKey: ["access-requests"] });
     },
   });
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -36,6 +40,7 @@ export default function Users() {
   return (
     <>
       <h1>Usuários</h1>
+      {identity?.can_delegate_admin && <section className="panel stack"><h2>Solicitações de acesso</h2><QueryState loading={requests.isPending} error={requests.error} retry={()=>void requests.refetch()}/>{requests.data?.length===0&&<p>Nenhuma solicitação pendente.</p>}{requests.data?.map(r=><div key={r.uid} className="panel stack"><code className="user-uid">{r.uid}</code><div className="actions"><button onClick={()=>{save.reset();setDraft({...empty,uid:r.uid});setSelected(false);}}>Definir permissões</button><button disabled={reject.isPending} onClick={()=>{if(window.confirm("Rejeitar esta solicitação?")) reject.mutate(r.uid);}}>Rejeitar</button></div></div>)}{reject.error&&<p role="alert" className="error">{reject.error.message}</p>}</section>}
       <section className="panel stack">
         <h2>Vínculos da organização</h2>
         <QueryState
@@ -56,7 +61,7 @@ export default function Users() {
                       disabled={save.isPending}
                       onClick={() => {
                         save.reset();
-                        setDraft(member);
+                        setDraft({...member,stores:member.stores.filter(code=>!stores.data?.some(s=>s.code===code&&!s.active))});
                         setSelected(true);
                       }}
                     >
@@ -99,7 +104,7 @@ export default function Users() {
         </select>
         <fieldset>
           <legend>Lojas autorizadas</legend>
-          {identity?.stores.map((store) => (
+          {(stores.data?.filter(s=>s.active) ?? (identity?.stores??[]).map(code=>({code,name:"Loja "+code,active:true}))).map(({code:store,name}) => (
             <label className="checkbox" key={store}>
               <input
                 type="checkbox"
@@ -113,7 +118,7 @@ export default function Users() {
                   })
                 }
               />{" "}
-              {store}
+              {store} · {name}
             </label>
           ))}
         </fieldset>

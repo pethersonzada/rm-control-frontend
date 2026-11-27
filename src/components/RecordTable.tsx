@@ -6,10 +6,12 @@ export function RecordTable({
   records,
   onStatus,
   onEdit,
+  onNativeEdit,
 }: {
   records: Occurrence[];
   onStatus?: (record: Occurrence, status: string) => Promise<void>;
   onEdit?: (record: Occurrence) => void;
+  onNativeEdit?: (record: Occurrence) => void;
 }) {
   const [open, setOpen] = useState("");
   if (!records.length)
@@ -47,7 +49,7 @@ export function RecordTable({
                       aria-expanded={expanded}
                       onClick={() => setOpen(expanded ? "" : key)}
                     >
-                      {record.code}
+                      {record.external_code || (record.revision ? 'RM ' + record.code.slice(-10) : record.code)}
                     </button>
                   </td>
                   <td>
@@ -118,6 +120,8 @@ export function RecordTable({
                             </label>
                           </div>
                         )}
+                        {record.revision && <p className="muted">ID RM: <code className="user-uid">{record.code}</code></p>}
+                        {onNativeEdit && record.revision && <button onClick={()=>onNativeEdit(record)}>Editar chamado</button>}
                         {onStatus && (
                           <StatusForm record={record} save={onStatus} />
                         )}

@@ -1,4 +1,6 @@
 import { useDeferredValue, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { TicketForm } from "./Tickets";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { RecordTable } from "../components/RecordTable";
 import { QueryState } from "../components/QueryState";
@@ -11,6 +13,7 @@ export function Records() {
   const { remote, identity } = useWorkspace();
   const client = useQueryClient();
   const [search, setSearch] = useState("");
+  const [editing, setEditing] = useState<Occurrence | null>(null);
   const delayed = useDeferredValue(search);
   const [status, setStatus] = useState("");
   const [store, setStore] = useState("");
@@ -80,9 +83,23 @@ export function Records() {
     }
   }
 
+  async function exportXlsx() {
+    if (!remote || exporting) return;
+    setError(""); setExporting(true);
+    const controller = new AbortController(); setExportController(controller);
+    try {
+      const blob = await remote.exportWorkbook(filters, controller.signal);
+      if (controller.signal.aborted) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href=url; a.download="rm-control-chamados.xlsx"; a.click();
+      window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+    } catch(caught) { if(!controller.signal.aborted)setError((caught as Error).message); }
+    finally {setExporting(false);setExportController(null);}
+  }
+  if (editing) return <TicketForm record={editing} onCancel={()=>setEditing(null)}/>;
   return (
     <>
-      <h1>Chamados</h1>
+      <div className="page-heading"><h1>Chamados</h1>{remote && identity?.role !== "viewer" && <Link className="primary" to="/chamados/novo">Novo chamado</Link>}</div>
       <section className="panel stack" aria-label="Consulta de chamados">
         <div className="filter-grid">
           <label>
@@ -214,6 +231,7 @@ export function Records() {
           </p>
         )}
         <div className="actions">
+          {remote && <button className="primary" disabled={invalidDates||exporting} onClick={()=>void exportXlsx()}>Gerar planilha Excel</button>}
           <button
             className="secondary"
             onClick={() => void exportCsv()}
@@ -242,6 +260,7 @@ export function Records() {
             <p>{data.length} chamado(s) nesta página.</p>
             <RecordTable
               records={data}
+              onNativeEdit={remote && identity?.role !== "viewer" ? setEditing : undefined}
               onStatus={
                 remote && identity?.role !== "viewer"
                   ? async (record, target) => {

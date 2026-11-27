@@ -1,4 +1,5 @@
 export interface Item {
+  category?: string | null;
   code: string;
   description: string;
   quantity: string;
@@ -8,6 +9,9 @@ export interface Item {
 }
 
 export interface Occurrence {
+  external_code?: string | null;
+  revision?: number;
+  source?: string;
   code: string;
   origin: string;
   destination: string;
@@ -121,4 +125,26 @@ export interface Member {
   role: Identity["role"];
   active: boolean;
   owner?: boolean;
+}
+
+export interface Store {
+  code: string;
+  name: string;
+  active: boolean;
+}
+export interface AccessRequest {
+  uid: string;
+  status: string;
+  created_at: string;
+}
+export interface TicketInput {
+  destination: string;
+  origin: string;
+  load: string;
+  bdv: string | null;
+  reason: string;
+  received_at: string;
+  external_code: string | null;
+  items: Item[];
+  invoices: { number: string; series: string }[];
 }

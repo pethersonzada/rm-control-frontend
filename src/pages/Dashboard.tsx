@@ -21,8 +21,8 @@ export function Dashboard({ canImport }: { canImport: boolean }) {
       <div className="page-heading">
         <h1>Visão geral</h1>
         {canImport && (
-          <Link className="primary" to="/importar">
-            Nova importação
+          <Link className="primary" to={remote ? "/chamados/novo" : "/importar"}>
+            {remote ? "Novo chamado" : "Nova importação"}
           </Link>
         )}
       </div>
