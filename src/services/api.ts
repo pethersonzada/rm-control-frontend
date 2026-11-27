@@ -14,6 +14,7 @@ import type {
   HistoryPage,
   CatalogPage,
   CatalogProduct,
+  SupplierCheck, SupplierCheckInput, SupplierFilters, SupplierPage, SupplierHistory,
 } from "../domain/types";
 import { exact } from "../domain/money";
 
@@ -174,7 +175,19 @@ export function api(
     return data;
   }
 
+  function supplierParams(filters: SupplierFilters) {
+    const {include_cancelled,from_date,to_date,...other}=filters;
+    const params=new URLSearchParams({...other,include_cancelled:String(include_cancelled)});
+    if(from_date)params.set('from_date',from_date);
+    if(to_date)params.set('to_date',to_date);
+    return params;
+  }
   return {
+    supplierChecks: (filters:SupplierFilters,cursor:number,signal?:AbortSignal) => {const p=supplierParams(filters);p.set('cursor',String(cursor));return request<SupplierPage>('/supplier-checks?'+p,{signal});},
+    createSupplierCheck: (data:SupplierCheckInput,key:string) => request<SupplierCheck>('/supplier-checks',{method:'POST',body:JSON.stringify(data),headers:{'Idempotency-Key':key}}),
+    editSupplierCheck: (id:number,data:SupplierCheckInput,revision:number,active:boolean,change_reason:string) => request<SupplierCheck>('/supplier-checks/'+id,{method:'PUT',body:JSON.stringify({...data,revision,active,change_reason})}),
+    supplierHistory: (id:number,cursor:number,signal?:AbortSignal) => request<SupplierHistory>('/supplier-checks/'+id+'/history?cursor='+cursor,{signal}),
+    exportSuppliers: (filters:SupplierFilters,signal?:AbortSignal) => request<Blob>('/reports/fornecedores.xlsx?'+supplierParams(filters),{signal},true),
     catalog: (search: string, cursor = 0, code?: string, signal?: AbortSignal) => {
       const params = new URLSearchParams({search,cursor:String(cursor)});
       if(code) params.set('code',code);

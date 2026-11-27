@@ -183,3 +183,38 @@ export interface CatalogPage {
   products: CatalogProduct[];
   next_cursor: number | null;
 }
+
+
+export interface SupplierCheckInput {
+  store: string;
+  supplier_code: string | null;
+  supplier_name: string;
+  checker: string;
+  checked_at: string;
+  reference: string | null;
+  notes: string | null;
+}
+export interface SupplierCheck extends SupplierCheckInput {
+  id: number;
+  active: boolean;
+  revision: number;
+  created_by: string;
+}
+export interface SupplierFilters {
+  store: string;
+  search: string;
+  checker: string;
+  from_date: string;
+  to_date: string;
+  include_cancelled: boolean;
+}
+export interface SupplierPage {
+  records: SupplierCheck[];
+  next_cursor: number | null;
+  completed: number;
+  cancelled: number;
+}
+export interface SupplierHistory {
+  events: {action: string; actor: string; reason: string | null; previous: SupplierCheck | null; current: SupplierCheck; created_at: string}[];
+  next_cursor: number | null;
+}
