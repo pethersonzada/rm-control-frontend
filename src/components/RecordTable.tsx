@@ -1,17 +1,22 @@
 import { Fragment, useState } from "react";
+import { TicketHistory } from "./TicketHistory";
 import { money } from "../domain/money";
-import { statuses, type Occurrence } from "../domain/types";
+import { statuses, type Occurrence, type Preview } from "../domain/types";
 
 export function RecordTable({
   records,
   onStatus,
   onEdit,
   onNativeEdit,
+  classifications,
+  showHistory = false,
 }: {
   records: Occurrence[];
   onStatus?: (record: Occurrence, status: string) => Promise<void>;
   onEdit?: (record: Occurrence) => void;
   onNativeEdit?: (record: Occurrence) => void;
+  classifications?: Preview["classifications"];
+  showHistory?: boolean;
 }) {
   const [open, setOpen] = useState("");
   if (!records.length)
@@ -40,6 +45,7 @@ export function RecordTable({
           {records.map((record) => {
             const key = JSON.stringify([record.destination, record.code]);
             const expanded = key === open;
+            const classification = classifications?.find(c=>c.code===record.code&&c.destination===record.destination)?.state;
             return (
               <Fragment key={key}>
                 <tr>
@@ -51,6 +57,7 @@ export function RecordTable({
                     >
                       {record.external_code || (record.revision ? 'RM ' + record.code.slice(-10) : record.code)}
                     </button>
+                    {classification && <small className={"import-state "+classification}>{({new:"Novo",updated:"Alteração",unchanged:"Sem alterações",conflicts:"Conflito"})[classification]}</small>}
                   </td>
                   <td>
                     {record.destination}
@@ -138,6 +145,7 @@ export function RecordTable({
                             </li>
                           ))}
                         </ul>
+                        {showHistory && <TicketHistory key={key} record={record}/>}
                       </div>
                     </td>
                   </tr>
