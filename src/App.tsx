@@ -16,6 +16,7 @@ const FirebaseGate =
     : lazy(() => import("./pages/FirebaseGate"));
 const Users = lazy(() => import("./pages/Users"));
 const Stores = lazy(() => import("./pages/Stores"));
+const Settings = lazy(() => import("./pages/Settings"));
 const Suppliers = lazy(() => import("./pages/Suppliers"));
 const Catalog = lazy(() => import("./pages/Catalog"));
 const NewTicket = lazy(() => import("./pages/Tickets"));
@@ -29,6 +30,7 @@ const pages = [
   ["/usuarios", "Usuários"],
   ["/lojas", "Lojas"],
   ["/catalogo", "Catálogo"],
+  ["/configuracoes", "Configurações"],
 ];
 
 type Session = { remote: ReturnType<typeof api>; identity: Identity };
@@ -100,7 +102,7 @@ function Workspace({
                   (path !== "/importar" || canImport) &&
                   (path !== "/usuarios" || canAdmin) &&
                   (path !== "/fornecedores" || !demo) &&
-                  ((path !== "/lojas" && path !== "/catalogo") || canManageStores),
+                  ((path !== "/lojas" && path !== "/catalogo" && path !== "/configuracoes") || canManageStores),
               )
               .map(([path, label]) => (
                 <NavLink key={path} to={path} end className="nav-link">
@@ -151,6 +153,7 @@ function Workspace({
             <Route path="/" element={<Dashboard canImport={canImport} />} />
             <Route path="/chamados" element={<Records />} />
             <Route path="/chamados/novo" element={!demo && canImport ? <Suspense fallback={<p role="status">Carregando formulário…</p>}><NewTicket /></Suspense> : <Navigate to="/chamados" replace />} />
+            <Route path="/configuracoes" element={canManageStores ? <Suspense fallback={<p role="status">Carregando configurações…</p>}><Settings /></Suspense> : <Navigate to="/" replace />} />
             <Route path="/fornecedores" element={!demo && session ? <Suspense fallback={<p role="status">Carregando conferências…</p>}><Suppliers /></Suspense> : <Navigate to="/" replace />} />
             <Route path="/catalogo" element={canManageStores ? <Suspense fallback={<p role="status">Carregando catálogo…</p>}><Catalog /></Suspense> : <Navigate to="/" replace />} />
             <Route path="/lojas" element={canManageStores ? <Suspense fallback={<p role="status">Carregando lojas…</p>}><Stores refresh={refresh ?? (() => {})} /></Suspense> : <Navigate to="/" replace />} />

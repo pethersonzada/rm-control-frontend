@@ -76,6 +76,7 @@ export interface Summary {
   occurrences: number;
   items_without_value: number;
   items_unknown_reason?: number;
+  financial_counts?: {approved:number; recovered:number; pending:number};
   deadline_counts?: {within: number; overdue: number; missing_date: number} | null;
   status_counts: Record<string, number>;
   totals_by_reason: Record<string, string>;
@@ -217,4 +218,22 @@ export interface SupplierPage {
 export interface SupplierHistory {
   events: {action: string; actor: string; reason: string | null; previous: SupplierCheck | null; current: SupplierCheck; created_at: string}[];
   next_cursor: number | null;
+}
+
+
+export interface OperationalPolicy {
+  enabled: boolean;
+  days: number;
+  start_field: "received_at" | "included_at";
+  timezone: string;
+  holidays: string[];
+  reference: string;
+  revision: number;
+}
+export interface FinanceReview {
+  approved: string | null;
+  recovered: string | null;
+  pending: string | null;
+  reference: string;
+  revision: number;
 }

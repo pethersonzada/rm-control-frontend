@@ -15,6 +15,7 @@ import type {
   CatalogPage,
   CatalogProduct,
   SupplierCheck, SupplierCheckInput, SupplierFilters, SupplierPage, SupplierHistory,
+  OperationalPolicy, FinanceReview,
 } from "../domain/types";
 import { exact } from "../domain/money";
 
@@ -183,6 +184,10 @@ export function api(
     return params;
   }
   return {
+    policy: (signal?:AbortSignal)=>request<OperationalPolicy>('/admin/policy',{signal}),
+    savePolicy: (data:OperationalPolicy)=>request<OperationalPolicy>('/admin/policy',{method:'PUT',body:JSON.stringify(data)}),
+    finance: (record:Occurrence,signal?:AbortSignal)=>request<FinanceReview>('/occurrences/'+encodeURIComponent(record.code)+'/finance?store='+encodeURIComponent(record.destination),{signal}),
+    saveFinance: (record:Occurrence,data:FinanceReview)=>request<FinanceReview>('/occurrences/'+encodeURIComponent(record.code)+'/finance?store='+encodeURIComponent(record.destination),{method:'PUT',body:JSON.stringify(data)}),
     supplierChecks: (filters:SupplierFilters,cursor:number,signal?:AbortSignal) => {const p=supplierParams(filters);p.set('cursor',String(cursor));return request<SupplierPage>('/supplier-checks?'+p,{signal});},
     createSupplierCheck: (data:SupplierCheckInput,key:string) => request<SupplierCheck>('/supplier-checks',{method:'POST',body:JSON.stringify(data),headers:{'Idempotency-Key':key}}),
     editSupplierCheck: (id:number,data:SupplierCheckInput,revision:number,active:boolean,change_reason:string) => request<SupplierCheck>('/supplier-checks/'+id,{method:'PUT',body:JSON.stringify({...data,revision,active,change_reason})}),
