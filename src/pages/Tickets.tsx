@@ -78,9 +78,9 @@ export function TicketForm({record, onCancel}: {record?: Occurrence; onCancel: (
         <h2>Dados da ocorrência</h2>
         <QueryState loading={stores.isPending} error={stores.error} retry={()=>void stores.refetch()}/>
         <fieldset disabled={busy} className="filter-grid">
-          <label>Loja<select value={draft.destination} onChange={e=>set("destination",e.target.value)} required disabled={Boolean(record)}><option value="">Selecione</option>{options.map(s=><option key={s.code} value={s.code}>{s.code} · {s.name}</option>)}{record && !options.some(s=>s.code===record.destination)&&<option value={record.destination}>{record.destination}</option>}</select></label>
+          <label>Loja<select aria-label="Loja" value={draft.destination} onChange={e=>set("destination",e.target.value)} required disabled={Boolean(record)}><option value="">Selecione</option>{options.map(s=><option key={s.code} value={s.code}>{s.code} · {s.name}</option>)}{record && !options.some(s=>s.code===record.destination)&&<option value={record.destination}>{record.destination}</option>}</select></label>
           <label>Data de recebimento<input required type="date" value={draft.received_at} onChange={e=>set("received_at",e.target.value)}/></label>
-          <label>Tipo de divergência<select required value={draft.reason} onChange={e=>set("reason",e.target.value)}><option value="">Selecione</option>{[...new Set(["FALTA","SOBRA","AVARIA",...(draft.reason?[draft.reason]:[])])].map(r=><option key={r}>{r}</option>)}</select></label>
+          <label>Tipo de divergência<select aria-label="Tipo de divergência" required value={draft.reason} onChange={e=>set("reason",e.target.value)}><option value="">Selecione</option>{[...new Set(["FALTA","SOBRA","AVARIA",...(draft.reason?[draft.reason]:[])])].map(r=><option key={r}>{r}</option>)}</select></label>
           <label>CD de origem<input maxLength={200} value={draft.origin} onChange={e=>set("origin",e.target.value)}/></label>
           <label>BDV<input maxLength={40} value={draft.bdv??""} onChange={e=>set("bdv",e.target.value)}/></label>
           <label>Carga<input maxLength={80} value={draft.load} onChange={e=>set("load",e.target.value)}/></label>
