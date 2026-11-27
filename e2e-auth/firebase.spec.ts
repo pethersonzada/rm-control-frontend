@@ -304,3 +304,72 @@ test("explica a recusa no cadastro e oferece recuperação sem reenviar o formul
   );
   expect(recoveryRequests).toBe(1);
 });
+
+
+test("administrador cria loja, aprova conta, registra chamado e gera XLSX", async ({page}) => {
+  const account = {localId:"qa-uid",email:"owner@example.invalid",emailVerified:true};
+  const stores = [{code:"2",name:"Loja sintética",active:true}];
+  const requests = [{uid:"pending-test",status:"pending",created_at:"2026-11-25T00:00:00Z"}];
+  const members: Array<Record<string, unknown>> = [];
+  const records: Array<Record<string, unknown>> = [];
+  await page.route("https://identitytoolkit.googleapis.com/**", route => {
+    if (route.request().url().includes("signInWithPassword")) return route.fulfill({json:{...account,idToken:token(0),refreshToken:"qa-refresh",expiresIn:"3600"}});
+    if (route.request().url().includes("accounts:lookup")) return route.fulfill({json:{users:[account]}});
+    return route.abort();
+  });
+  await page.route("**/api/**", route => {
+    const path = new URL(route.request().url()).pathname.replace("/api","");
+    const method = route.request().method();
+    expect(route.request().headers().authorization).toBeDefined();
+    if(path==="/me")return route.fulfill({json:{subject:"qa",organization:"qa-org",role:"admin",stores:stores.filter(s=>s.active).map(s=>s.code),can_delegate_admin:true}});
+    if(path==="/summary")return route.fulfill({json:{occurrences:records.length,items_without_value:0,status_counts:{},totals_by_reason:{FALTA:"0"},net_reported:"0",approved:null,recovered:null,pending:null,note:"Sintético"}});
+    if(path==="/stores")return route.fulfill({json:stores});
+    if(path==="/admin/stores"&&method==="PUT"){stores.push(route.request().postDataJSON());return route.fulfill({json:stores.at(-1)});}
+    if(path==="/admin/access-requests")return route.fulfill({json:requests});
+    if(path==="/admin/users"&&method==="GET")return route.fulfill({json:members});
+    if(path==="/admin/users"&&method==="PUT"){const member=route.request().postDataJSON();members.push(member);requests.splice(0);return route.fulfill({json:member});}
+    if(path==="/tickets"&&method==="POST"){
+      const data=route.request().postDataJSON();
+      expect(data.destination).toBe("7");
+      expect(data.items[0].code).toBe("000123");
+      expect(route.request().headers()["idempotency-key"]).toBeTruthy();
+      const record={...data,code:"9000000000000000000000000000000000000001",status:"PENDENTE",received_at:"25/11/2026",source:"native",revision:1};
+      records.push(record);return route.fulfill({json:record});
+    }
+    if(path==="/occurrences")return route.fulfill({json:{records,next_cursor:null}});
+    if(path==="/reports/chamados.xlsx")return route.fulfill({body:Buffer.from("synthetic-workbook"),contentType:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+    return route.fulfill({status:404,json:{detail:"Rota sintética não encontrada"}});
+  });
+  await page.goto("/");
+  await page.getByLabel("E-mail",{exact:true}).fill(account.email);
+  await page.getByLabel("Senha",{exact:true}).fill("senha-sintetica");
+  await page.getByRole("button",{name:"Entrar",exact:true}).click();
+  await page.getByRole("link",{name:"Lojas",exact:true}).click();
+  await page.getByLabel("Código da loja").fill("7");
+  await page.getByLabel("Nome da loja").fill("Loja QA");
+  await page.getByRole("button",{name:"Salvar loja"}).click();
+  await expect(page.getByRole("cell",{name:"Loja QA"})).toBeVisible();
+  await page.getByRole("link",{name:"Usuários"}).click();
+  await page.getByRole("button",{name:"Definir permissões"}).click();
+  await page.getByLabel("Perfil").selectOption("importer");
+  await page.getByLabel("7 · Loja QA").check();
+  await page.getByRole("button",{name:"Salvar permissões"}).click();
+  await expect(page.getByText("Nenhuma solicitação pendente.")).toBeVisible();
+  await page.getByRole("link",{name:"Chamados",exact:true}).click();
+  await page.getByRole("link",{name:"Novo chamado"}).click();
+  await page.getByLabel("Loja",{exact:true}).selectOption("7");
+  await page.getByLabel("Data de recebimento").fill("2026-11-25");
+  await page.getByLabel("Tipo de divergência").selectOption("FALTA");
+  await page.getByLabel("PLU",{exact:true}).fill("000123");
+  await page.getByLabel("Descrição",{exact:true}).fill("Produto QA");
+  await page.getByLabel("Embalagem / volume").fill("CX");
+  await page.getByLabel("Quantidade divergente").fill("2");
+  await page.getByLabel("Valor total informado (R$)").fill("12,34");
+  await page.getByRole("button",{name:"Salvar chamado"}).click();
+  await expect(page.getByRole("heading",{name:"Chamado registrado"})).toBeVisible();
+  await page.getByRole("button",{name:"Voltar aos chamados"}).click();
+  await expect(page.getByText("1 chamado(s) nesta página.")).toBeVisible();
+  const download = page.waitForEvent("download");
+  await page.getByRole("button",{name:"Gerar planilha Excel"}).click();
+  expect((await download).suggestedFilename()).toBe("rm-control-chamados.xlsx");
+});
