@@ -9,6 +9,7 @@ export interface Item {
 }
 
 export interface Occurrence {
+  expected_snapshot?: string;
   external_code?: string | null;
   revision?: number;
   source?: string;
@@ -74,6 +75,8 @@ export interface Identity {
 export interface Summary {
   occurrences: number;
   items_without_value: number;
+  items_unknown_reason?: number;
+  deadline_counts?: {within: number; overdue: number; missing_date: number} | null;
   status_counts: Record<string, number>;
   totals_by_reason: Record<string, string>;
   net_reported: string | null;
