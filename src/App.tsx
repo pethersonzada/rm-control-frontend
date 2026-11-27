@@ -86,7 +86,8 @@ function Workspace({
         </a>
         <aside>
           <div className="brand">
-            RM Control <small>Operações logísticas</small>
+            <img className="brand-logo" src="/logo-mono-com-nome.png" alt="RM Control" />
+            <small>Operações logísticas</small>
           </div>
           <nav aria-label="Navegação principal">
             {pages
