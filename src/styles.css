@@ -1,15 +1,21 @@
 :root {
   font-family: "Inter", system-ui, sans-serif;
-  color: var(--navy);
-  background: var(--cream);
+  color: var(--ink);
+  background: var(--canvas);
   font-synthesis: none;
   line-height: 1.45;
-  --muted: #52566b;
-  --cream: #f4e1d2;
-  --accent: #640119;
-  --blue: var(--accent);
-  --navy: #1b2f68;
-  --line: #d8c7ba;
+  --muted: #475569;
+  --canvas: #f1f5f9;
+  --accent: #2563eb;
+  --primary: var(--accent);
+  --sidebar: #ffffff;
+  --surface: #ffffff;
+  --selection: #e8efff;
+  --selection-text: #1d4ed8;
+  --focus: #2563eb;
+  --chart-secondary: #0f766e;
+  --ink: #172b45;
+  --line: #dbe3ed;
 }
 * {
   box-sizing: border-box;
@@ -53,21 +59,21 @@ button,
   justify-content: center;
   padding: 0.55rem 0.85rem;
   min-height: 42px;
-  color: var(--navy);
+  color: var(--ink);
   background: white;
-  border: 1px solid #927f78;
+  border: 1px solid #8493a7;
   border-radius: 6px;
   font-weight: 600;
   text-decoration: none;
 }
 .primary {
-  background: var(--blue);
-  border-color: var(--blue);
+  background: var(--primary);
+  border-color: var(--primary);
   color: white;
 }
 .primary:hover {
-  background: #480012;
-  border-color: #480012;
+  background: #1d4ed8;
+  border-color: #1d4ed8;
 }
 input,
 select,
@@ -78,16 +84,16 @@ textarea {
   min-width: 0;
   color: inherit;
   background: white;
-  border: 1px solid #927f78;
+  border: 1px solid #8493a7;
   border-radius: 6px;
 }
 input[type="checkbox"] {
   width: 1.2rem;
   min-height: 1.2rem;
-  accent-color: var(--blue);
+  accent-color: var(--primary);
 }
 :focus-visible {
-  outline: 3px solid var(--navy);
+  outline: 3px solid var(--focus);
   outline-offset: 3px;
 }
 .layout {
@@ -95,12 +101,10 @@ input[type="checkbox"] {
   grid-template-columns: 14.5rem minmax(0, 1fr);
   min-height: 100vh;
 }
-aside :focus-visible {
-  outline-color: var(--cream);
-}
 aside {
-  background: var(--navy);
-  color: white;
+  background: var(--sidebar);
+  color: var(--ink);
+  border-right: 1px solid var(--line);
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
@@ -111,7 +115,7 @@ aside {
   font-weight: 750;
 }
 .brand small {
-  color: var(--cream);
+  color: var(--muted);
   font-size: 0.78rem;
   font-weight: 500;
 }
@@ -125,18 +129,17 @@ nav {
 .nav-link {
   display: block;
   padding: 0.62rem 0.75rem;
-  color: var(--cream);
+  color: var(--muted);
   text-decoration: none;
   border-radius: 6px;
 }
-.nav-link:hover,
-.nav-link.active {
-  background: #344a83;
-  color: white;
+.nav-link:hover {
+  background: var(--canvas);
+  color: var(--ink);
 }
 .nav-link.active {
-  background: var(--cream);
-  color: var(--navy);
+  background: var(--selection);
+  color: var(--selection-text);
   font-weight: 700;
 }
 .aside-bottom {
@@ -165,8 +168,8 @@ main {
 .skeleton {
   padding: 0.75rem 0.9rem;
   border-radius: 6px;
-  background: #eceef5;
-  color: var(--navy);
+  background: #eaf1fb;
+  color: var(--ink);
 }
 .error {
   background: #ffebed;
@@ -180,7 +183,8 @@ main {
   margin-top: 0.5rem;
 }
 .panel {
-  background: white;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 4%);
   border: 1px solid var(--line);
   border-radius: 9px;
   padding: clamp(0.85rem, 2vw, 1.3rem);
@@ -227,6 +231,7 @@ label :is(select, input):not([type="checkbox"]) {
   gap: 0.7rem;
 }
 .metrics div {
+  background: #f8fafc;
   border: 1px solid var(--line);
   padding: 0.65rem 0.8rem;
   border-radius: 6px;
@@ -237,7 +242,7 @@ label :is(select, input):not([type="checkbox"]) {
   font-size: 0.875rem;
 }
 .metrics dd {
-  color: var(--navy);
+  color: var(--ink);
   font-weight: 700;
   font-size: 1.2rem;
   overflow-wrap: anywhere;
@@ -259,27 +264,27 @@ td {
   vertical-align: top;
 }
 th {
-  color: var(--navy);
-  background: #faf2eb;
+  color: var(--ink);
+  background: #f8fafc;
 }
 td small {
   color: var(--muted);
 }
 .link-button {
   min-height: 36px;
-  color: var(--navy);
+  color: var(--selection-text);
   border-color: transparent;
   text-decoration: underline;
 }
 .status {
   display: inline-block;
-  color: var(--navy);
-  background: #eceef5;
+  color: var(--ink);
+  background: #eaf1fb;
   padding: 0.2rem 0.35rem;
   border-radius: 4px;
 }
 .record-details {
-  background: #faf2eb;
+  background: #f8fafc;
   padding: 0.6rem;
 }
 .inline-form {
@@ -297,7 +302,7 @@ td small {
   position: absolute;
   left: -100vw;
   background: white;
-  color: var(--navy);
+  color: var(--ink);
   padding: 0.5rem;
   z-index: 1;
 }
@@ -316,6 +321,8 @@ td small {
   aside {
     padding: 0.8rem 1rem;
     gap: 0.7rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
   }
   nav {
     display: flex;
