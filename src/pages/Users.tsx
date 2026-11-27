@@ -15,6 +15,7 @@ export default function Users() {
   const { remote, identity } = useWorkspace();
   const client = useQueryClient();
   const [draft, setDraft] = useState<Member>(empty);
+  const [showForm,setShowForm]=useState(false);
   const [selected, setSelected] = useState(false);
   const members = useQuery({
     queryKey: ["users"],
@@ -28,7 +29,7 @@ export default function Users() {
     mutationFn: (member: Member) => remote!.saveUser(member),
     onSuccess: async () => {
       setDraft(empty);
-      setSelected(false);
+      setSelected(false);setShowForm(false);
       await client.invalidateQueries({ queryKey: ["users"] });
       await client.invalidateQueries({ queryKey: ["access-requests"] });
     },
@@ -39,22 +40,24 @@ export default function Users() {
   }
   return (
     <>
-      <h1>Usuários</h1>
-      {identity?.can_delegate_admin && <section className="panel stack"><h2>Solicitações de acesso</h2><QueryState loading={requests.isPending} error={requests.error} retry={()=>void requests.refetch()}/>{requests.data?.length===0&&<p>Nenhuma solicitação pendente.</p>}{requests.data?.map(r=><div key={r.uid} className="panel stack"><code className="user-uid">{r.uid}</code><div className="actions"><button onClick={()=>{save.reset();setDraft({...empty,uid:r.uid});setSelected(false);}}>Definir permissões</button><button disabled={reject.isPending} onClick={()=>{if(window.confirm("Rejeitar esta solicitação?")) reject.mutate(r.uid);}}>Rejeitar</button></div></div>)}{reject.error&&<p role="alert" className="error">{reject.error.message}</p>}</section>}
+      <div className="page-heading"><div><h1>Usuários</h1><p className="muted">Aprove solicitações e gerencie as permissões.</p></div>{!showForm&&<button className="primary" onClick={()=>{setDraft(empty);setSelected(false);save.reset();setShowForm(true);}}>Autorizar usuário</button>}</div>
+      {save.isSuccess&&!showForm&&<p role="status" className="notice">Permissões atualizadas.</p>}
+      {!showForm&&<>
+      {identity?.can_delegate_admin && <section className="panel stack"><h2>Solicitações de acesso</h2><QueryState loading={requests.isPending} error={requests.error} retry={()=>void requests.refetch()}/>{requests.data?.length===0&&<p>Nenhuma solicitação pendente.</p>}{requests.data?.map(r=><div key={r.uid} className="panel stack"><code className="user-uid">{r.uid}</code><div className="actions"><button onClick={()=>{save.reset();setDraft({...empty,uid:r.uid});setSelected(false);setShowForm(true);}}>Definir permissões</button><button disabled={reject.isPending} onClick={()=>{if(window.confirm("Rejeitar esta solicitação?")) reject.mutate(r.uid);}}>Rejeitar</button></div></div>)}{reject.error&&<p role="alert" className="error">{reject.error.message}</p>}</section>}
       <section className="panel stack">
-        <h2>Vínculos da organização</h2>
+        <h2>Usuários autorizados</h2>
         <QueryState
           loading={members.isPending}
           error={members.error}
           retry={() => void members.refetch()}
         />
         {members.data && (
-          <ul className="stack">
+          <ul className="member-list">
             {members.data.map((member) => (
-              <li key={member.uid}>
+              <li key={member.uid}><div className="member-info">
                 <code className="user-uid">{member.uid}</code> ·{" "}
                 {labels[member.role]} · {member.stores.join(", ")} ·{" "}
-                {member.active ? "Ativo" : "Desativado"}
+                {member.active ? "Ativo" : "Desativado"}</div>
                 {!member.owner &&
                   (member.role !== "admin" || identity?.can_delegate_admin) && (
                     <button
@@ -62,7 +65,7 @@ export default function Users() {
                       onClick={() => {
                         save.reset();
                         setDraft({...member,stores:member.stores.filter(code=>!stores.data?.some(s=>s.code===code&&!s.active))});
-                        setSelected(true);
+                        setSelected(true);setShowForm(true);
                       }}
                     >
                       Editar
@@ -73,7 +76,8 @@ export default function Users() {
           </ul>
         )}
       </section>
-      <form className="panel stack" onSubmit={submit}>
+      </>}
+      {showForm&&<form className="panel stack" onSubmit={submit}>
         <h2>{selected ? "Editar vínculo" : "Autorizar usuário por UID"}</h2>
         <label htmlFor="member-uid">UID no Firebase</label>
         <input
@@ -139,12 +143,12 @@ export default function Users() {
           >
             Salvar permissões
           </button>
-          {selected && (
+          {(
             <button
               type="button"
               onClick={() => {
                 setDraft(empty);
-                setSelected(false);
+                setSelected(false);setShowForm(false);
                 save.reset();
               }}
             >
@@ -162,7 +166,7 @@ export default function Users() {
             {save.error.message}
           </p>
         )}
-      </form>
+      </form>}
     </>
   );
 }

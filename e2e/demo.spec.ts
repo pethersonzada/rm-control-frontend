@@ -111,3 +111,29 @@ test("filtros avançados recolhidos, menu e atalhos de trabalho",async({page})=>
   }
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
+
+
+test("tema escuro persiste, acompanha o sistema e mantém contraste",async({page})=>{
+  await page.emulateMedia({colorScheme:"light"});
+  await page.goto("/");
+  const theme=page.getByRole("combobox",{name:"Tema da interface"});
+  await expect(page.locator("html")).toHaveAttribute("data-theme","light");
+  await theme.selectOption("dark");
+  await expect(page.locator("html")).toHaveAttribute("data-theme","dark");
+  const dark=await new AxeBuilder({page}).withTags(["wcag2a","wcag2aa","wcag21a","wcag21aa"]).analyze();
+  expect(dark.violations).toEqual([]);
+  await page.reload();
+  await expect(theme).toHaveValue("dark");
+  await expect(page.locator("html")).toHaveAttribute("data-theme","dark");
+  await page.getByRole("link",{name:/Consultar chamados/}).click();
+  await expect(page.getByRole("heading",{name:"Chamados",exact:true})).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("data-theme","dark");
+  await theme.selectOption("system");
+  await page.emulateMedia({colorScheme:"dark"});
+  await expect(page.locator("html")).toHaveAttribute("data-theme","dark");
+  await page.emulateMedia({colorScheme:"light"});
+  await expect(page.locator("html")).toHaveAttribute("data-theme","light");
+  await theme.selectOption("light");
+  await page.emulateMedia({colorScheme:"dark"});
+  await expect(page.locator("html")).toHaveAttribute("data-theme","light");
+});

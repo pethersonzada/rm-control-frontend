@@ -27,6 +27,7 @@ test("navegador, assinatura RS256, API e PostgreSQL: aprovação, chamado, forne
     await expect(operator.getByText(/Solicitação enviada|Solicitação registrada/)).toBeVisible();
     await identity(page,"owner");
     await page.getByRole("link",{name:"Lojas",exact:true}).click();
+  await page.getByRole("button",{name:"Nova loja",exact:true}).click();
     await page.getByLabel("Código da loja").fill("7");
     await page.getByLabel("Nome da loja").fill("Loja integração");
     await page.getByRole("button",{name:"Salvar loja"}).click();

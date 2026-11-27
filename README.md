@@ -71,3 +71,5 @@ O job browser-api-postgres usa PostgreSQL descartável, checkout fixado do backe
 ### Organização da interface
 
 Login compacto; navegação agrupada em Principal, Operação e Administração. Chamados mantém pesquisa, loja e status à vista e filtros avançados recolhidos. Fornecedores abre na consulta e oferece formulário separado de nova conferência. Inventário e importação têm passos explícitos. O ambiente continua de homologação, sem dados reais. A revisão de UX não altera autorização, APIs, schema ou regras financeiras.
+
+Tema claro, escuro ou automático disponível antes e depois do login. A preferência fica somente no navegador. O painel agrupa indicadores, situação de chamados e financeiro; os cadastros de fornecedores, lojas, produtos e usuários são separados das consultas. Testes de contraste e persistência do tema cobrem desktop e celular.

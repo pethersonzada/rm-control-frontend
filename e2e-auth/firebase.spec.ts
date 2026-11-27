@@ -353,6 +353,7 @@ test("administrador cria loja, aprova conta, registra chamado e gera XLSX", asyn
   await expect(page.getByRole("heading",{name:"Visão geral",exact:true})).toBeVisible();
   if(await page.getByRole("button",{name:"Menu",exact:true}).isVisible())await page.getByRole("button",{name:"Menu",exact:true}).click();
   await page.getByRole("link",{name:"Lojas",exact:true}).click();
+  await page.getByRole("button",{name:"Nova loja",exact:true}).click();
   await page.getByLabel("Código da loja").fill("7");
   await page.getByLabel("Nome da loja").fill("Loja QA");
   await page.getByRole("button",{name:"Salvar loja"}).click();
@@ -366,6 +367,7 @@ test("administrador cria loja, aprova conta, registra chamado e gera XLSX", asyn
   await expect(page.getByText("Nenhuma solicitação pendente.")).toBeVisible();
   if(await page.getByRole("button",{name:"Menu",exact:true}).isVisible())await page.getByRole("button",{name:"Menu",exact:true}).click();
   await page.getByRole("link",{name:"Catálogo",exact:true}).click();
+  await page.getByRole("button",{name:"Novo produto",exact:true}).click();
   await page.getByLabel("PLU",{exact:true}).fill("000123");
   await page.getByLabel("Descrição",{exact:true}).fill("Produto QA");
   await page.getByLabel("Embalagem",{exact:true}).fill("CX");
@@ -403,4 +405,19 @@ test("administrador cria loja, aprova conta, registra chamado e gera XLSX", asyn
   const download = page.waitForEvent("download");
   await page.getByRole("button",{name:"Gerar planilha Excel"}).click();
   expect((await download).suggestedFilename()).toBe("rm-control-chamados.xlsx");
+});
+
+
+test("login oferece tema escuro acessível e persistente",async({page})=>{
+  await page.goto("/");
+  await expect(page.getByRole("heading",{name:"Entrar",exact:true})).toBeVisible();
+  const theme=page.getByRole("combobox",{name:"Tema da interface"});
+  await theme.selectOption("dark");
+  await expect(page.locator("html")).toHaveAttribute("data-theme","dark");
+  expect((await new AxeBuilder({page}).withTags(["wcag2a","wcag2aa","wcag21a","wcag21aa"]).analyze()).violations).toEqual([]);
+  await page.reload();
+  await expect(theme).toHaveValue("dark");
+  await page.getByRole("button",{name:"Criar conta",exact:true}).click();
+  await expect(page.getByRole("heading",{name:"Criar conta",exact:true})).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("data-theme","dark");
 });

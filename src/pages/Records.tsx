@@ -15,7 +15,7 @@ export function Records() {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Occurrence | null>(null);
   const delayed = useDeferredValue(search);
-  const [params]=useSearchParams();
+  const [params,setParams]=useSearchParams();
   const [status, setStatus] = useState(()=>{const value=params.get("status")??"";return statuses.includes(value)?value:"";});
   const [store, setStore] = useState("");
   const [reason, setReason] = useState("");
@@ -122,6 +122,7 @@ export function Records() {
               onChange={(event) => {
                 setCursors([0]);
                 setStatus(event.target.value);
+                setParams(event.target.value?{status:event.target.value}:{},{replace:true});
               }}
             >
               <option value="">Todos</option>
@@ -242,7 +243,7 @@ export function Records() {
           >
             {exporting ? "Exportando…" : "Exportar CSV"}
           </button>
-          <button type="button" className="text-action" onClick={()=>{setSearch("");setStatus("");setStore("");setReason("");setDateField("included");setFrom("");setTo("");setIncludeTests(false);setAscending(true);setCursors([0]);}}>Limpar filtros</button>
+          <button type="button" className="text-action" onClick={()=>{setSearch("");setStatus("");setParams({},{replace:true});setStore("");setReason("");setDateField("included");setFrom("");setTo("");setIncludeTests(false);setAscending(true);setCursors([0]);}}>Limpar filtros</button>
           {exporting&&<button onClick={()=>exportController?.abort()}>Cancelar exportação</button>}
         </div>
         {error && (
