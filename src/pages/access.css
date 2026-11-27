@@ -31,3 +31,11 @@
 .access-actions{display:flex;flex-wrap:wrap;gap:.55rem}
 .access-footer{text-align:center;color:var(--muted);font-size:.78rem}
 @media(max-width:480px){.access{padding:1.3rem 1rem;align-content:start}.access-shell{gap:1rem}.access-content{padding:1.25rem}.access-logo{width:175px}}
+
+.access{background:var(--canvas)}
+.access-content{background:var(--surface);box-shadow:none}
+.access-field input,.access-google{border-color:var(--control-line)}
+.access-field input::placeholder{color:var(--muted)}
+.access .access-text-button{color:var(--selection-text)}
+.access-google:hover:enabled{background:var(--hover)}
+.access-footer{display:grid;justify-items:center;gap:.65rem}

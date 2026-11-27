@@ -2,6 +2,8 @@ import { lazy, Suspense, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { NavLink, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import type { Identity } from "./domain/types";
+import { BrandLogo, ThemeControl } from "./components/Theme";
+import { UiIcon } from "./components/UiIcon";
 import { WorkspaceContext } from "./hooks/workspace";
 import { Dashboard } from "./pages/Dashboard";
 import { ImportPage } from "./pages/Import";
@@ -90,8 +92,8 @@ function Workspace({
         </a>
         <aside>
           <div className="sidebar-top">
-            <div className="brand"><img className="brand-logo" src="/logo-mono-com-nome.png" alt="RM Control" /></div>
-            <button className="mobile-menu" aria-expanded={navOpen} aria-controls="workspace-nav" onClick={()=>setNavOpen(v=>!v)}>Menu</button>
+            <div className="brand"><BrandLogo className="brand-logo"/></div>
+            <button className="mobile-menu" aria-expanded={navOpen} aria-controls="workspace-nav" onClick={()=>setNavOpen(v=>!v)}><UiIcon name="menu"/> Menu</button>
           </div>
           <nav id="workspace-nav" className={navOpen?"nav-open":""} aria-label="Navegação principal">
             {groups.map(group=>{
@@ -101,18 +103,19 @@ function Workspace({
                 (!["/lojas","/catalogo","/configuracoes"].includes(path)||canManageStores));
               return links.length>0&&<div className="nav-group" key={group.title}>
                 <p className="nav-caption">{group.title}</p>
-                {links.map(([path,label])=><NavLink key={path} to={path} end={path==="/"} onClick={()=>setNavOpen(false)} className="nav-link">{label}</NavLink>)}
+                {links.map(([path,label])=><NavLink key={path} to={path} end={path==="/"} onClick={()=>setNavOpen(false)} className="nav-link"><UiIcon name={path}/><span>{label}</span></NavLink>)}
               </div>;
             })}
           </nav>
           <div className="aside-bottom">
+            <div className="sidebar-account"><span className="account-avatar" aria-hidden="true">{demo?"D":(roles[session?.identity.role??""]??"U")[0]}</span><div><strong>{demo?"Demonstração":roles[session?.identity.role??""]??"Usuário"}</strong><small>{demo?"Dados fictícios":`Loja${(session?.identity.stores.length??0)>1?"s":""} ${session?.identity.stores.join(", ")||"—"}`}</small></div></div>
             {demo ? (
               <button className="secondary" onClick={resetDemo}>
                 Limpar demonstração
               </button>
             ) : (
               <button className="secondary" onClick={logout}>
-                Sair
+                <UiIcon name="logout"/> Sair
               </button>
             )}
           </div>
@@ -120,7 +123,7 @@ function Workspace({
         <main id="conteudo" tabIndex={-1}>
           <header className="workspace-header">
             <span className="workspace-breadcrumb">{location.pathname==="/"?"Início":groups.find(g=>g.pages.some(([p])=>p!=="/"&&location.pathname.startsWith(p)))?.title??"Início"}</span>
-            <span className="workspace-account">{demo?"Demonstração":`Homologação · ${roles[session?.identity.role??""]??"Usuário"} · Loja${(session?.identity.stores.length??0)>1?"s":""} ${session?.identity.stores.join(", ")||"—"}`}</span>
+            <div className="header-tools"><span className="environment-label">{demo?"Demonstração":"Homologação"}</span><ThemeControl/></div>
           </header>
           {demo && (
             <p className="demo-notice">

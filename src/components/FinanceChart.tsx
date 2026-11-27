@@ -29,7 +29,7 @@ export default function FinanceChart({
           <CartesianGrid stroke="var(--line)" vertical={false} />
           <XAxis dataKey="name" tick={{ fill: "var(--ink)", fontSize: 13 }} />
           <YAxis width={64} tick={{ fill: "var(--ink)", fontSize: 12 }} />
-          <Tooltip
+          <Tooltip contentStyle={{background:"var(--surface)",borderColor:"var(--line)",color:"var(--ink)"}} labelStyle={{color:"var(--ink)"}} itemStyle={{color:"var(--ink)"}}
             formatter={(_value, _name, entry) => [
               counts ? entry.payload.total : money(entry.payload.total),
               counts ? "Chamados" : "Valor informado",

@@ -7,6 +7,7 @@ import {
   signInWithPopup,
   type Auth,
 } from "@firebase/auth";
+import {BrandLogo,ThemeControl} from "../components/Theme";
 import "./access.css";
 
 type Mode = "login" | "register" | "reset";
@@ -37,13 +38,13 @@ export function AccessLayout({ children }: { children: ReactNode }) {
     <main className="access">
       <div className="access-shell">
         <header className="access-brand">
-          <img className="access-logo" src="/logo-mono-com-nome.png" alt="RM Control" />
+          <BrandLogo className="access-logo"/>
           <p>Recebimento de mercadorias</p>
         </header>
         <section className="access-content" aria-labelledby="access-title">
           <div className="access-content-inner">{children}</div>
         </section>
-        <footer className="access-footer">Ambiente de homologação · Use apenas dados fictícios</footer>
+        <footer className="access-footer"><span>Ambiente de homologação · Use apenas dados fictícios</span><ThemeControl/></footer>
       </div>
     </main>
   );

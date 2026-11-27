@@ -1,5 +1,5 @@
 import { useDeferredValue, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { TicketForm } from "./Tickets";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { RecordTable } from "../components/RecordTable";
@@ -15,7 +15,8 @@ export function Records() {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Occurrence | null>(null);
   const delayed = useDeferredValue(search);
-  const [status, setStatus] = useState("");
+  const [params]=useSearchParams();
+  const [status, setStatus] = useState(()=>{const value=params.get("status")??"";return statuses.includes(value)?value:"";});
   const [store, setStore] = useState("");
   const [reason, setReason] = useState("");
   const [dateField, setDateField] = useState<Filters["date_field"]>("included");
@@ -100,7 +101,7 @@ export function Records() {
   return (
     <>
       <div className="page-heading"><div><h1>Chamados</h1><p className="muted">Consulte, atualize e exporte as ocorrências.</p></div><div className="actions">{remote && identity?.role !== "viewer" && <><Link className="secondary" to="/importar">Importar histórico</Link><Link className="primary" to="/chamados/novo">Novo chamado</Link></>}</div></div>
-      <section className="panel stack" aria-label="Consulta de chamados">
+      <section className="panel stack records-panel" aria-label="Consulta de chamados">
         <div className="filter-grid primary-filters">
           <label>
             Pesquisar
@@ -261,7 +262,7 @@ export function Records() {
         />
         {query.data && (
           <>
-            <p>{data.length} chamado(s) nesta página.</p>
+            <p className="result-count">{data.length} chamado(s) nesta página.</p>
             <RecordTable
               records={data}
               showHistory={Boolean(remote)}
