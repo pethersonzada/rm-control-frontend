@@ -341,3 +341,13 @@ td small {
 }
 
 .brand-logo { display: block; width: 100%; max-width: 184px; height: auto; object-fit: contain; margin-bottom: .4rem; }
+
+.import-state { font-weight: 650; margin-top: .3rem; }
+.import-state.new { color: #166534; }
+.import-state.updated { color: #1d4ed8; }
+.import-state.unchanged { color: var(--muted); }
+.import-state.conflicts { color: #991b1b; }
+.ticket-history { margin-top: 1rem; padding: 1rem; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.ticket-history ol { margin: 0; padding-left: 1.3rem; }
+.ticket-history small { overflow-wrap: anywhere; }
+progress { width: 100%; accent-color: var(--primary); }

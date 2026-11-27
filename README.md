@@ -4,7 +4,7 @@ Painel proprietário de ocorrências logísticas, importação, indicadores fina
 
 ## Demonstração pública
 
-[RM Control na Vercel](https://rm-control-frontend.vercel.app) é o domínio estável. O build público usa cenários sintéticos de listagem, detalhamento e histórico. O navegador guarda somente os identificadores dos cenários selecionados. A ação **Limpar demonstração** apaga o progresso e o armazenamento usado pela versão anterior. A demo usa uma política de conteúdo que bloqueia conexões da página e a saúde em `/api/health` é um arquivo estático. URLs geradas de preview permanecem protegidas pela Vercel.
+O build de demonstração (npm run build:demo) usa cenários sintéticos de listagem, detalhamento e histórico. O navegador guarda somente os identificadores dos cenários selecionados. A ação **Limpar demonstração** apaga o progresso e o armazenamento usado pela versão anterior. A demo usa uma política de conteúdo que bloqueia conexões da página e a saúde em `/api/health` é um arquivo estático. URLs geradas de preview permanecem protegidas pela Vercel.
 
 ## Desenvolvimento
 
@@ -23,9 +23,9 @@ O modo de desenvolvimento abre em http://127.0.0.1:5173. Os testes Playwright ex
 
 ## Ambiente operacional
 
-A [homologação](https://rm-control-homologacao.vercel.app) usa o projeto Firebase `rm-control-webapp` e a API no Render. Configure as variáveis `VITE_FIREBASE_*` e `VITE_API_URL` no projeto separado da Vercel. Defina Root Directory como `homologacao` e habilite a inclusão de fontes fora desse diretório. O build `npm run build:homologacao` publica em `homologacao/dist`. A CSP e as rotas desse projeto ficam em `homologacao/vercel.json`.
+O [endereço principal](https://rm-control-frontend.vercel.app) e o [endereço de homologação](https://rm-control-homologacao.vercel.app) são configurados para o build autenticado. Atualmente compartilham a API e o banco de testes; não representam ambientes de dados isolados. O aplicativo usa o projeto Firebase `rm-control-webapp` e a API no Render. Configure as variáveis `VITE_FIREBASE_*` e `VITE_API_URL` no projeto separado da Vercel. Defina Root Directory como `homologacao` e habilite a inclusão de fontes fora desse diretório. O build `npm run build:homologacao` publica em `homologacao/dist`. A CSP e as rotas desse projeto ficam em `homologacao/vercel.json`.
 
-Adicione somente o domínio estável de homologação aos domínios autorizados no Firebase e ao CORS do Render. A demo mantém seu próprio build e política sem rede. Configure as mesmas variáveis em `.env.local` e use `npm run dev` para desenvolvimento. A sessão Firebase dura a aba, restaura após recarregar e o SDK renova o token. O frontend carrega as permissões de `/me` e limpa os dados ao sair, trocar de conta ou perder o vínculo. O botão **Criar conta** cadastra e-mail e senha no Firebase. O usuário recebe um UID para solicitar liberação ao administrador. O primeiro administrador é provisionado pelo procedimento documentado no [backend](https://github.com/pethersonzada/rm-control-backend/blob/main/docs/firebase-homologacao.md).
+Adicione somente os dois domínios estáveis necessários aos domínios autorizados no Firebase e ao CORS do Render. A demo mantém seu próprio build e política sem rede. Configure as mesmas variáveis em `.env.local` e use `npm run dev` para desenvolvimento. A sessão Firebase dura a aba, restaura após recarregar e o SDK renova o token. O frontend carrega as permissões de `/me` e limpa os dados ao sair, trocar de conta ou perder o vínculo. O botão **Criar conta** cadastra e-mail e senha no Firebase. O usuário fica bloqueado e solicita liberação ao administrador por UID. O responsável cadastra lojas e aprova ou rejeita solicitações na interface. O primeiro administrador é provisionado pelo procedimento documentado no [backend](https://github.com/pethersonzada/rm-control-backend/blob/main/docs/firebase-homologacao.md).
 
 O XLSX vai por multipart à API privada, que executa a leitura. A interface mostra o estado de processamento e permite cancelar a espera pela prévia. A prévia usa páginas de 50 chamados. O limite por arquivo é 21 MB e o lote de gravação tem limite de 12 MB JSON. O transporte direto preserva o arquivo e evita expansão em base64. Web Workers foram avaliados para leitura local. Eles ajudariam em uma futura prévia privada offline. O parser Python é a única implementação de regras XLSX neste fluxo.
 
@@ -43,3 +43,14 @@ RM_TEST_URL=https://rm-control-frontend.vercel.app npm run test:e2e
 ```
 
 Software proprietário. Consulte [LICENSE](LICENSE).
+
+
+## Fluxo principal
+
+A área **Chamados** permite abertura e edição nativas, com produtos, notas, dados de recebimento e número externo opcional. O botão **Gerar planilha Excel** baixa um XLSX do banco com os filtros selecionados. O histórico é exibido ao expandir a ocorrência. Não há integração de abertura oficial no D-Supply. O modelo do relatório precisa de aceite do responsável.
+
+O menu **Lojas** permite criar, editar e desativar unidades pelo administrador responsável. O menu **Usuários** gerencia os vínculos, fila de pendências e escopo. **Catálogo** cadastra referências explicitamente conferidas; o formulário do chamado permite buscar PLU para preencher campos vazios sem inferir valores ou converter embalagens.
+
+A importação complementar apresenta comparação com os registros existentes, permite selecionar a loja do detalhe avulso, mapear cabeçalhos XLSX e cancelar/limpar a prévia. A confirmação usa a mesma chave de idempotência em tentativas de rede e pode exigir nova análise se os dados mudaram. A leitura multipart é limitada e síncrona; a barra de progresso é indeterminada, não representa percentual inventado.
+
+Os indicadores de prazo só aparecem com calendário configurado no backend. A interface não aplica regras financeiras presumidas. Use exclusivamente dados sintéticos até a autorização corporativa.

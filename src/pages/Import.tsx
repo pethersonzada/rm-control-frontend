@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { RecordTable } from "../components/RecordTable";
-import type { Occurrence, Preview } from "../domain/types";
+import type { ImportState, Occurrence, Preview } from "../domain/types";
 import { useWorkspace } from "../hooks/workspace";
+import { ApiError } from "../services/api";
 import {
   demoPreview,
   demoSave,
@@ -10,8 +11,11 @@ import {
   type Scenario,
 } from "../services/demo";
 
+const columns = ["DATA RECEBIMENTO", "LOJA", "PLU", "N° CHAMADO", "TIPO DA DIVERGENCIA", "QTD DIVERGENTE", "VALOR DA DIVERGENCIA", "DATA RETORNO CD", "CD ORIGEM", "N° BDV", "SITUACAO DO CHAMADO", "VOLUME", "DESCRICAO PRODUTO", "CATEGORIA"];
+const labels: Record<ImportState, string> = {new:"Novos",updated:"Alterações",unchanged:"Sem alterações",conflicts:"Conflitos"};
+
 export function ImportPage() {
-  const { remote } = useWorkspace();
+  const { remote, identity } = useWorkspace();
   const client = useQueryClient();
   const [scenario, setScenario] = useState<Scenario>("list");
   const [preview, setPreview] = useState<Preview | null>(null);
@@ -20,6 +24,10 @@ export function ImportPage() {
   const [source, setSource] = useState<"text" | "workbook">("text");
   const [busy, setBusy] = useState<"analyze" | "save" | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [mapping, setMapping] = useState<Record<string,string>>({});
+  const form = useRef<HTMLFormElement>(null);
+  const saving = useRef(false);
+  const sent = useRef(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const active = useRef<AbortController | null>(null);
@@ -35,8 +43,17 @@ export function ImportPage() {
     setEditing(false);
   }
 
+  function discard() {
+    clear();
+    form.current?.reset();
+    setFile(null);
+    setMapping({});
+    sent.current = false;
+  }
+
   async function analyze(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (busy || sent.current) return;
     clear();
     if (!remote) {
       setPreview(demoPreview(scenario));
@@ -60,14 +77,19 @@ export function ImportPage() {
               String(data.get("sheet") || "").trim(),
               data.has("partial"),
               controller.signal,
+              Object.fromEntries(Object.entries(mapping).filter(([,value])=>value.trim()).map(([key,value])=>[key,value.trim()])),
             )
           : await remote.clipboard(
               String(data.get("text") || ""),
               String(data.get("code") || "").trim(),
               controller.signal,
+              String(data.get("target_store") || ""),
             );
-      batch.current = crypto.randomUUID();
-      setPreview(result);
+      if (!controller.signal.aborted) {
+        batch.current = crypto.randomUUID();
+        sent.current = false;
+        setPreview(result);
+      }
     } catch (caught) {
       if (controller.signal.aborted) setNotice("Prévia cancelada.");
       else setError((caught as Error).message);
@@ -94,7 +116,9 @@ export function ImportPage() {
   }
 
   async function confirm() {
-    if (!preview || preview.blocked || !preview.records.length) return;
+    if (!preview || preview.blocked || !preview.records.length || saving.current) return;
+    saving.current = true;
+    sent.current = Boolean(remote);
     setBusy("save");
     setError("");
     try {
@@ -102,11 +126,13 @@ export function ImportPage() {
         ? await remote.confirm(preview.records, batch.current)
         : demoSave(scenario);
       await client.invalidateQueries();
-      setPreview(null);
+      discard();
       setNotice(`${result.saved} chamado(s) salvo(s).`);
     } catch (caught) {
+      if (caught instanceof ApiError && ([400,401,403,413,422,429].includes(caught.status) || (caught.status===409 && caught.message.includes("depois da prévia")))) sent.current = false;
       setError((caught as Error).message);
     } finally {
+      saving.current = false;
       setBusy(null);
     }
   }
@@ -114,8 +140,8 @@ export function ImportPage() {
   return (
     <>
       <h1>Importar dados</h1>
-      <form className="panel stack" onSubmit={analyze}>
-        <fieldset disabled={busy !== null}>
+      <form ref={form} className="panel stack" onSubmit={analyze}>
+        <fieldset disabled={busy !== null || sent.current}>
           {!remote ? (
             <>
               <label htmlFor="scenario">Cenário de importação</label>
@@ -142,10 +168,10 @@ export function ImportPage() {
                 value={source}
                 onChange={(event) => {
                   setSource(event.target.value as typeof source);
-                  clear();
+                  discard();
                 }}
               >
-                <option value="text">Texto copiado do sistema</option>
+                <option value="text">Colar dados do sistema</option>
                 <option value="workbook">Histórico XLSX</option>
               </select>
               {source === "text" ? (
@@ -153,6 +179,7 @@ export function ImportPage() {
                   <label htmlFor="clipboard">
                     Listagem e detalhes copiados
                   </label>
+                  <p className="muted">Copie a tabela autorizada e cole aqui com Ctrl+V. Para um detalhe avulso, informe o chamado existente e a loja.</p>
                   <textarea
                     name="text"
                     id="clipboard"
@@ -172,6 +199,8 @@ export function ImportPage() {
                     maxLength={40}
                     onChange={clear}
                   />
+                  <label htmlFor="target-store">Loja do chamado detalhado (opcional)</label>
+                  <select id="target-store" name="target_store" onChange={clear}><option value="">Detectar na listagem</option>{identity?.stores.map(s=><option key={s}>{s}</option>)}</select>
                 </>
               ) : (
                 <>
@@ -195,6 +224,8 @@ export function ImportPage() {
                     maxLength={31}
                     onChange={clear}
                   />
+                  {file && <p className="muted">{file.name} · {(file.size/1_000_000).toFixed(2)} MB</p>}
+                  <details><summary>Mapear cabeçalhos diferentes (opcional)</summary><p className="muted">Informe o título exato da sua planilha somente para colunas que têm outro nome.</p><div className="filter-grid">{columns.map(column=><label key={column}>{column}<input value={mapping[column]??""} maxLength={200} onChange={e=>{setMapping({...mapping,[column]:e.target.value});clear();}}/></label>)}</div></details>
                   <label className="checkbox">
                     <input type="checkbox" name="partial" onChange={clear} />
                     Excluir chamados com conflito e importar as linhas válidas
@@ -205,9 +236,10 @@ export function ImportPage() {
           )}
         </fieldset>
         <div className="actions">
-          <button className="primary" disabled={busy !== null}>
+          <button className="primary" disabled={busy !== null || sent.current}>
             Analisar dados
           </button>
+          <button type="button" disabled={busy !== null} onClick={()=>{if(!sent.current||window.confirm("A gravação anterior pode ter sido concluída. Confira os chamados antes de abrir outro lote. Descartar a prévia?"))discard();}}>Limpar importação</button>
           {busy === "analyze" && (
             <button
               type="button"
@@ -219,7 +251,7 @@ export function ImportPage() {
           )}
         </div>
         {busy === "analyze" && (
-          <p role="status">Enviando e analisando dados…</p>
+          <div role="status"><p>Enviando e analisando dados…</p><progress aria-label="Processando a importação" /></div>
         )}
         {notice && (
           <p role="status" className="notice">
@@ -239,6 +271,8 @@ export function ImportPage() {
             {preview.records.length} chamado(s) reconhecido(s)
             {preview.sheet ? ` na aba ${preview.sheet}` : ""}.
           </p>
+          {preview.comparison && <p className="muted">Comparação com o banco no momento da análise, antes de eventuais edições manuais.</p>}
+          {preview.comparison && <dl className="metrics">{Object.entries(preview.comparison).map(([state,count])=><div key={state}><dt>{labels[state as ImportState]}</dt><dd>{count}</dd></div>)}</dl>}
           {preview.counts && (
             <p>
               {preview.counts.rows} linhas analisadas ·{" "}
@@ -261,7 +295,8 @@ export function ImportPage() {
           )}
           <RecordTable
             records={preview.records.slice(part * 50, (part + 1) * 50)}
-            onEdit={remote && !preview.blocked && !busy ? edit : undefined}
+            classifications={preview.classifications}
+            onEdit={remote && !preview.blocked && !busy && !sent.current ? edit : undefined}
           />
           {preview.records.length > 50 && (
             <div className="actions">
@@ -281,6 +316,7 @@ export function ImportPage() {
             <label className="checkbox">
               <input
                 type="checkbox"
+                disabled={busy !== null}
                 checked={editing}
                 onChange={(event) => setEditing(event.target.checked)}
               />
@@ -298,8 +334,9 @@ export function ImportPage() {
                 Boolean(remote && !editing)
               }
             >
-              {busy === "save" ? "Gravando…" : "Confirmar importação"}
+              {busy === "save" ? "Gravando…" : sent.current ? "Reenviar confirmação" : "Confirmar importação"}
             </button>
+            <button disabled={busy !== null} onClick={()=>{if(!sent.current||window.confirm("A confirmação anterior pode ter sido gravada. Descartar?"))discard();}}>Cancelar importação</button>
           </div>
         </section>
       )}

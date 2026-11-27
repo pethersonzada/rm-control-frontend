@@ -11,6 +11,9 @@ import type {
   Store,
   AccessRequest,
   TicketInput,
+  HistoryPage,
+  CatalogPage,
+  CatalogProduct,
 } from "../domain/types";
 import { exact } from "../domain/money";
 
@@ -166,10 +169,18 @@ export function api(
     ) {
       throw new Error("Prévia fora do formato esperado.");
     }
+    if (data.comparison && ["new","updated","unchanged","conflicts"].some(key=>!Number.isSafeInteger(data.comparison![key as keyof typeof data.comparison]) || data.comparison![key as keyof typeof data.comparison]<0)) throw new Error("Comparação fora do formato esperado.");
+    if (data.classifications && (!Array.isArray(data.classifications) || data.classifications.some(c=>typeof c.code!=="string"||typeof c.destination!=="string"||!["new","updated","unchanged","conflicts"].includes(c.state)))) throw new Error("Classificação fora do formato esperado.");
     return data;
   }
 
   return {
+    catalog: (search: string, cursor = 0, code?: string, signal?: AbortSignal) => {
+      const params = new URLSearchParams({search,cursor:String(cursor)});
+      if(code) params.set('code',code);
+      return request<CatalogPage>('/catalog?'+params,{signal});
+    },
+    saveProduct: (product: CatalogProduct) => request<CatalogProduct>('/admin/catalog',{method:'PUT',body:JSON.stringify(product)}),
     stores: (signal?: AbortSignal) => request<Store[]>("/stores", { signal }),
     saveStore: (store: Store) => request<Store>("/admin/stores", { method: "PUT", body: JSON.stringify(store) }),
     requestAccess: () => request<{ status: string }>("/access/request", { method: "POST" }),
@@ -256,10 +267,10 @@ export function api(
       }
       return data;
     },
-    clipboard: (text: string, code: string, signal: AbortSignal) =>
+    clipboard: (text: string, code: string, signal: AbortSignal, store?: string) =>
       preview(
         "/imports/preview",
-        JSON.stringify({ text, target_code: code || null }),
+        JSON.stringify({ text, target_code: code || null, target_store: store || null }),
         signal,
       ),
     workbook: (
@@ -267,11 +278,13 @@ export function api(
       sheet: string,
       partial: boolean,
       signal: AbortSignal,
+      mapping?: Record<string, string>,
     ) => {
       const data = new FormData();
       data.append("file", file);
       if (sheet) data.append("sheet", sheet);
       data.append("skip_invalid", String(partial));
+      if (mapping && Object.keys(mapping).length) data.append("mapping", JSON.stringify(mapping));
       return preview("/imports/workbook", data, signal);
     },
     confirm: (records: Occurrence[], key: string) =>
@@ -280,6 +293,7 @@ export function api(
         body: JSON.stringify(records),
         headers: { "Idempotency-Key": key },
       }),
+    history: (record: Occurrence, cursor: number, signal?: AbortSignal) => request<HistoryPage>(`/occurrences/${encodeURIComponent(record.code)}/history?store=${encodeURIComponent(record.destination)}&cursor=${cursor}`, {signal}),
     status: (record: Occurrence, status: string) =>
       request<Occurrence>(
         `/occurrences/${encodeURIComponent(record.code)}/status?store=${encodeURIComponent(record.destination)}`,

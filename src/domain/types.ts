@@ -9,6 +9,7 @@ export interface Item {
 }
 
 export interface Occurrence {
+  expected_snapshot?: string;
   external_code?: string | null;
   revision?: number;
   source?: string;
@@ -29,7 +30,11 @@ export interface Occurrence {
   items: Item[];
 }
 
+export type ImportState = "new" | "updated" | "unchanged" | "conflicts";
+
 export interface Preview {
+  comparison?: Record<ImportState, number>;
+  classifications?: {code: string; destination: string; state: ImportState}[];
   records: Occurrence[];
   warnings: string[];
   blocked?: boolean;
@@ -70,6 +75,8 @@ export interface Identity {
 export interface Summary {
   occurrences: number;
   items_without_value: number;
+  items_unknown_reason?: number;
+  deadline_counts?: {within: number; overdue: number; missing_date: number} | null;
   status_counts: Record<string, number>;
   totals_by_reason: Record<string, string>;
   net_reported: string | null;
@@ -147,4 +154,32 @@ export interface TicketInput {
   external_code: string | null;
   items: Item[];
   invoices: { number: string; series: string }[];
+}
+
+
+export interface HistoryEvent {
+  action: string;
+  subject: string;
+  previous_status: string | null;
+  next_status: string | null;
+  created_at: string;
+  details: {revision?: number; fields?: string[]; items?: number; invoices?: number} | null;
+}
+export interface HistoryPage {
+  events: HistoryEvent[];
+  next_cursor: number | null;
+}
+
+
+export interface CatalogProduct {
+  code: string;
+  description: string;
+  category: string | null;
+  package: string | null;
+  reference: string;
+  active: boolean;
+}
+export interface CatalogPage {
+  products: CatalogProduct[];
+  next_cursor: number | null;
 }

@@ -108,6 +108,11 @@ export default function FirebaseGate({
           if (!operation.signal.aborted) {
             client.clear();
             setAuthorized(null);
+            if (caught instanceof ApiError && caught.status === 403) {
+              void remote.requestAccess().then(response=>{
+                if(!operation.signal.aborted && auth.currentUser?.uid===current.uid) setRequestNotice(response.status==="pending"?"Solicitação registrada. Aguarde a aprovação.":response.status==="rejected"?"Acesso recusado ou desativado. Consulte o administrador.":"Conta vinculada. Verifique o acesso novamente.");
+              }).catch(()=>{});
+            }
             setError(
               caught instanceof ApiError
                 ? caught.message
