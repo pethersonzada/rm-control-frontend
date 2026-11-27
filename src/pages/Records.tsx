@@ -260,6 +260,7 @@ export function Records() {
             <p>{data.length} chamado(s) nesta página.</p>
             <RecordTable
               records={data}
+              showHistory={Boolean(remote)}
               onNativeEdit={remote && identity?.role !== "viewer" ? setEditing : undefined}
               onStatus={
                 remote && identity?.role !== "viewer"
