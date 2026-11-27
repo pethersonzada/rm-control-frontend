@@ -164,7 +164,7 @@ export function Records() {
           </label>
           <label>
             Motivo
-            <select
+            <select aria-label="Motivo"
               value={reason}
               onChange={(event) => {
                 setCursors([0]);
