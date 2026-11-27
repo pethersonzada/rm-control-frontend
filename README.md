@@ -63,3 +63,7 @@ Na área Fornecedores conferidos, registre somente conferências concluídas. O 
 Configurações permite ao responsável cadastrar a regra de prazo, feriados e referências de conversão por embalagem de produtos ativos, sempre com fonte conferida. A conciliação preserva quantidades originais e não altera estoque. Na expansão dos chamados, a conferência financeira permite ao responsável registrar valores aprovados, recuperados e pendentes com referência, sem inferência automática. O diagnóstico é local ao processo e não mantém histórico.
 
 Antes de utilização real, valide o modelo dos arquivos e as regras com a empresa, obtenha autorização e isole os ambientes. Ambos os endereços atuais continuam de teste; nenhum dado real deve ser inserido.
+
+### Integração com API real no CI
+
+O job browser-api-postgres usa PostgreSQL descartável, checkout fixado do backend e API FastAPI local. O provedor Firebase é simulado no navegador, mas os JWTs são assinados com uma chave RSA efêmera e verificados pelo backend real. A jornada cobre solicitação/aprovação de acesso, isolamento de loja, criação de chamado, persistência após reload, download XLSX, conferência de fornecedor e upload de arquivo sintético de 14–20 MB. Nenhuma conta externa, chave de serviço ou banco hospedado é usado. A validação com Google/Firebase real e domínio publicado permanece separada.
