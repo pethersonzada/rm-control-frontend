@@ -11,6 +11,7 @@ import type {
   Store,
   AccessRequest,
   TicketInput,
+  HistoryPage,
 } from "../domain/types";
 import { exact } from "../domain/money";
 
@@ -256,10 +257,10 @@ export function api(
       }
       return data;
     },
-    clipboard: (text: string, code: string, signal: AbortSignal) =>
+    clipboard: (text: string, code: string, signal: AbortSignal, store?: string) =>
       preview(
         "/imports/preview",
-        JSON.stringify({ text, target_code: code || null }),
+        JSON.stringify({ text, target_code: code || null, target_store: store || null }),
         signal,
       ),
     workbook: (
@@ -267,11 +268,13 @@ export function api(
       sheet: string,
       partial: boolean,
       signal: AbortSignal,
+      mapping?: Record<string, string>,
     ) => {
       const data = new FormData();
       data.append("file", file);
       if (sheet) data.append("sheet", sheet);
       data.append("skip_invalid", String(partial));
+      if (mapping && Object.keys(mapping).length) data.append("mapping", JSON.stringify(mapping));
       return preview("/imports/workbook", data, signal);
     },
     confirm: (records: Occurrence[], key: string) =>
@@ -280,6 +283,7 @@ export function api(
         body: JSON.stringify(records),
         headers: { "Idempotency-Key": key },
       }),
+    history: (record: Occurrence, cursor: number, signal?: AbortSignal) => request<HistoryPage>(`/occurrences/${encodeURIComponent(record.code)}/history?store=${encodeURIComponent(record.destination)}&cursor=${cursor}`, {signal}),
     status: (record: Occurrence, status: string) =>
       request<Occurrence>(
         `/occurrences/${encodeURIComponent(record.code)}/status?store=${encodeURIComponent(record.destination)}`,
