@@ -82,8 +82,32 @@ test("mantém navegação acessível e cabe na largura da tela", async ({
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
     .analyze();
   expect(analysis.violations).toEqual([]);
+  if(await page.getByRole("button",{name:"Menu",exact:true}).isVisible())await page.getByRole("button",{name:"Menu",exact:true}).click();
   await page.getByRole("link", { name: "Importar dados" }).click();
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(page.viewportSize()!.width);
+});
+
+
+test("filtros avançados recolhidos, menu e atalhos de trabalho",async({page})=>{
+  await page.goto("/");
+  await expect(page.getByRole("link",{name:/Consultar chamados/})).toBeVisible();
+  await page.getByRole("link",{name:/Consultar chamados/}).click();
+  await expect(page.getByRole("heading",{name:"Chamados",exact:true})).toBeVisible();
+  await expect(page.getByRole("textbox",{name:"Pesquisar"})).toBeVisible();
+  await expect(page.getByLabel("Motivo",{exact:true})).toBeHidden();
+  await page.getByText("Mais filtros",{exact:true}).click();
+  await page.getByLabel("Motivo",{exact:true}).selectOption("FALTA");
+  await expect(page.getByText("Mais filtros · ativos",{exact:true})).toBeVisible();
+  await page.getByRole("button",{name:"Limpar filtros",exact:true}).click();
+  await expect(page.getByLabel("Motivo",{exact:true})).toHaveValue("");
+  if(await page.getByRole("button",{name:"Menu",exact:true}).isVisible()){
+    await expect(page.getByRole("button",{name:"Menu",exact:true})).toHaveAttribute("aria-expanded","false");
+    await page.getByRole("button",{name:"Menu",exact:true}).click();
+    await expect(page.getByRole("navigation",{name:"Navegação principal"})).toBeVisible();
+    await page.getByRole("link",{name:"Inventários",exact:true}).click();
+    await expect(page.getByRole("button",{name:"Menu",exact:true})).toHaveAttribute("aria-expanded","false");
+  }
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });

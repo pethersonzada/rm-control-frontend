@@ -141,7 +141,7 @@ export function ImportPage() {
     <>
       <div className="page-heading"><div><h1>Importar dados</h1><p className="muted">Traga chamados existentes. Revise a prévia antes de salvar.</p></div></div>
       <form ref={form} className="panel stack" onSubmit={analyze}>
-        <h2><span className="step-number">1</span> Escolher origem e enviar dados</h2>
+        <h2><span className="step-number" aria-hidden="true">1</span> Escolher origem e enviar dados</h2>
         <fieldset disabled={busy !== null || sent.current}>
           {!remote ? (
             <>

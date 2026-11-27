@@ -374,7 +374,7 @@ h2{font-size:1.02rem;font-weight:700}h3{font-size:.95rem;margin:0}
 .stack{gap:.9rem}
 button,.primary,.secondary{border-radius:7px;border-color:#a0afc0;font-size:.875rem}
 .primary{border-color:var(--primary)}
-button:not(.primary):not(:disabled):hover,.secondary:hover{background:#f3f6fa}
+button:not(.primary):not(.access-text-button):not(:disabled):hover,.secondary:hover{background:#f3f6fa}
 label{font-size:.875rem;font-weight:600}
 input,select,textarea{border-color:#a0afc0;border-radius:7px}
 .filter-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr));gap:.8rem}

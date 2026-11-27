@@ -162,8 +162,6 @@ export function Records() {
               <option value="descending">Chamado decrescente</option>
             </select>
           </label>
-        </div>
-        <div className="filter-grid">
           <label>
             Motivo
             <select
