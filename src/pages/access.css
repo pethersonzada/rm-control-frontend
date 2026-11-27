@@ -41,18 +41,7 @@
   font-weight: 750;
 }
 
-.access-mark {
-  display: grid;
-  place-items: center;
-  width: 2.55rem;
-  height: 2.55rem;
-  border-radius: 0.75rem;
-  background: #b2e7dd;
-  color: #123a3b;
-  font-size: 0.85rem;
-  font-weight: 850;
-  letter-spacing: -0.02em;
-}
+.access-logo { display: block; width: min(100%, 240px); height: auto; object-fit: contain; }
 
 .access-context-copy {
   position: relative;
@@ -346,3 +335,5 @@
     padding-block: 2.25rem;
   }
 }
+
+@media (max-width: 760px) { .access-brand { min-width: 0; flex: 0 1 210px; } .access-logo { max-width: 100%; } }

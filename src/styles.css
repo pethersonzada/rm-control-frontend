@@ -339,3 +339,5 @@ td small {
 .user-uid {
   overflow-wrap: anywhere;
 }
+
+.brand-logo { display: block; width: 100%; max-width: 184px; height: auto; object-fit: contain; margin-bottom: .4rem; }

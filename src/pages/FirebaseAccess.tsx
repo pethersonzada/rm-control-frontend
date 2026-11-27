@@ -38,10 +38,7 @@ export function AccessLayout({ children }: { children: ReactNode }) {
       <div className="access-shell">
         <div className="access-context">
           <div className="access-brand">
-            <span className="access-mark" aria-hidden="true">
-              RM
-            </span>
-            <span>RM Control</span>
+            <img className="access-logo" src="/logo-color-com-nome.png" alt="RM Control" />
           </div>
           <div className="access-context-copy">
             <p className="access-environment">Homologação</p>
