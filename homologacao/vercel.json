@@ -8,6 +8,8 @@
     { "source": "/chamados", "destination": "/index.html" },
     { "source": "/chamados/novo", "destination": "/index.html" },
     { "source": "/lojas", "destination": "/index.html" },
+    { "source": "/configuracoes", "destination": "/index.html" },
+    { "source": "/fornecedores", "destination": "/index.html" },
     { "source": "/catalogo", "destination": "/index.html" },
     { "source": "/importar", "destination": "/index.html" },
     { "source": "/inventarios", "destination": "/index.html" },

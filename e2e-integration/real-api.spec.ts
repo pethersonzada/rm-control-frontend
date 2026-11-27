@@ -1,0 +1,86 @@
+import {expect,test} from "@playwright/test";
+import {readFile} from "node:fs/promises";
+import {join} from "node:path";
+
+test("navegador, assinatura RS256, API e PostgreSQL: aprovação, chamado, fornecedores e XLSX grande",async({page,browser,request})=>{
+  const root=process.env.RM_INTEGRATION_FIXTURES!;
+  const tokens=JSON.parse(await readFile(join(root,"tokens.json"),"utf8"));
+  const api="http://127.0.0.1:8001";
+  async function identity(target:typeof page,role:"owner"|"operator"){
+    const account={localId:"qa-"+role,email:role+"@example.invalid",emailVerified:true};
+    await target.route("https://identitytoolkit.googleapis.com/**",route=>{
+      if(route.request().url().includes("signInWithPassword"))return route.fulfill({json:{...account,idToken:tokens[role],refreshToken:"qa-refresh",expiresIn:"3600"}});
+      if(route.request().url().includes("accounts:lookup"))return route.fulfill({json:{users:[account]}});
+      return route.abort();
+    });
+    await target.goto("/");
+    await target.getByLabel("E-mail",{exact:true}).fill(account.email);
+    await target.getByLabel("Senha",{exact:true}).fill("senha-sintetica");
+    await target.getByRole("button",{name:"Entrar",exact:true}).click();
+  }
+  const operatorContext=await browser.newContext();
+  try{
+    const operator=await operatorContext.newPage();
+    await identity(operator,"operator");
+    await expect(operator.getByRole("heading",{name:"Acesso pendente"})).toBeVisible();
+    await operator.getByRole("button",{name:"Solicitar acesso"}).click();
+    await expect(operator.getByText(/Solicitação enviada|Solicitação registrada/)).toBeVisible();
+    await identity(page,"owner");
+    await page.getByRole("link",{name:"Lojas",exact:true}).click();
+    await page.getByLabel("Código da loja").fill("7");
+    await page.getByLabel("Nome da loja").fill("Loja integração");
+    await page.getByRole("button",{name:"Salvar loja"}).click();
+    await expect(page.getByRole("cell",{name:"Loja integração"})).toBeVisible();
+    await page.getByRole("link",{name:"Usuários",exact:true}).click();
+    await page.getByRole("button",{name:"Definir permissões"}).click();
+    await page.getByLabel("Perfil").selectOption("importer");
+    await page.getByLabel("7 · Loja integração").check();
+    await page.getByRole("button",{name:"Salvar permissões"}).click();
+    await expect(page.getByText("Nenhuma solicitação pendente.")).toBeVisible();
+    await operator.getByRole("button",{name:"Verificar acesso novamente"}).click();
+    await expect(operator.getByRole("heading",{name:"Visão geral"})).toBeVisible();
+    await expect(operator.getByRole("link",{name:"Usuários",exact:true})).toHaveCount(0);
+    const denied=await request.get(api+"/occurrences?store=2",{headers:{Authorization:"Bearer "+tokens.operator}});
+    expect(denied.status()).toBe(403);
+    await operator.getByRole("link",{name:"Chamados",exact:true}).click();
+    await operator.getByRole("link",{name:"Novo chamado"}).click();
+    await operator.getByLabel("Loja",{exact:true}).selectOption("7");
+    await operator.getByLabel("Data de recebimento").fill("2026-01-08");
+    await operator.getByLabel("Tipo de divergência").selectOption("FALTA");
+    await operator.getByLabel("PLU",{exact:true}).fill("000123");
+    await operator.getByLabel("Descrição",{exact:true}).fill("Produto integração");
+    await operator.getByLabel("Embalagem / volume").fill("CX-12");
+    await operator.getByLabel("Quantidade divergente").fill("2");
+    await operator.getByLabel("Valor total informado (R$)").fill("12,34");
+    await operator.getByRole("button",{name:"Salvar chamado"}).click();
+    await expect(operator.getByRole("heading",{name:"Chamado registrado"})).toBeVisible();
+    await operator.getByRole("button",{name:"Voltar aos chamados"}).click();
+    await operator.reload();
+    await expect(operator.getByText("1 chamado(s) nesta página.")).toBeVisible();
+    const download=operator.waitForEvent("download");
+    await operator.getByRole("button",{name:"Gerar planilha Excel"}).click();
+    const path=await(await download).path();
+    expect((await readFile(path!)).subarray(0,4).toString("hex")).toBe("504b0304");
+    await operator.getByRole("link",{name:"Fornecedores conferidos"}).click();
+    await operator.getByLabel("Fornecedor",{exact:true}).fill("Fornecedor integração");
+    await operator.getByLabel("Conferente",{exact:true}).fill("Conferente QA");
+    await operator.getByRole("button",{name:"Registrar conferência"}).click();
+    await expect(operator.getByRole("cell",{name:"Fornecedor integração",exact:true})).toBeVisible();
+    await operator.reload();
+    await expect(operator.getByRole("cell",{name:"Fornecedor integração",exact:true})).toBeVisible();
+    await operator.getByRole("link",{name:"Importar dados"}).click();
+    await operator.getByLabel("Origem dos dados").selectOption("workbook");
+    await operator.locator("input[type=file]").setInputFiles(join(root,"historico.xlsx"));
+    const preview=operator.waitForResponse(r=>r.url().endsWith("/imports/workbook")&&r.request().method()==="POST");
+    await operator.getByRole("button",{name:"Analisar dados"}).click();
+    const response=await preview;
+    expect(response.status()).toBe(200);
+    const parsed=await response.json();
+    expect(parsed.counts.rows).toBe(9300);
+    expect(parsed.blocked).toBe(false);
+    await expect(operator.getByRole("heading",{name:"Conferência da importação"})).toBeVisible();
+    await operator.getByRole("button",{name:"Cancelar importação"}).click();
+    const persisted=await request.get(api+"/occurrences",{headers:{Authorization:"Bearer "+tokens.operator}});
+    expect((await persisted.json()).records).toHaveLength(1);
+  }finally{await operatorContext.close();}
+});

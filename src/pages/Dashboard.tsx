@@ -82,16 +82,16 @@ export function Dashboard({ canImport }: { canImport: boolean }) {
                 <dd>{money(summary.net_reported)}</dd>
               </div>
               <div>
-                <dt>Aprovado</dt>
-                <dd>{money(summary.approved)}</dd>
+                <dt>Aprovado conferido</dt>
+                <dd>{money(summary.approved)}</dd>{summary.financial_counts&&<small>{summary.financial_counts.approved} chamados informados</small>}
               </div>
               <div>
-                <dt>Recuperado</dt>
-                <dd>{money(summary.recovered)}</dd>
+                <dt>Recuperado conferido</dt>
+                <dd>{money(summary.recovered)}</dd>{summary.financial_counts&&<small>{summary.financial_counts.recovered} chamados informados</small>}
               </div>
               <div>
-                <dt>Pendente</dt>
-                <dd>{money(summary.pending)}</dd>
+                <dt>Pendente conferido</dt>
+                <dd>{money(summary.pending)}</dd>{summary.financial_counts&&<small>{summary.financial_counts.pending} chamados informados</small>}
               </div>
             </dl>
             <Suspense

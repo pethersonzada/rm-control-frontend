@@ -1,4 +1,5 @@
 import { Fragment, useState } from "react";
+import { FinancialReview } from "./FinancialReview";
 import { TicketHistory } from "./TicketHistory";
 import { money } from "../domain/money";
 import { statuses, type Occurrence, type Preview } from "../domain/types";
@@ -145,7 +146,7 @@ export function RecordTable({
                             </li>
                           ))}
                         </ul>
-                        {showHistory && <TicketHistory key={key} record={record}/>}
+                        {showHistory && <><FinancialReview key={"finance"+key} record={record}/><TicketHistory key={key} record={record}/></>}
                       </div>
                     </td>
                   </tr>

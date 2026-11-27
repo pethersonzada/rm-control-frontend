@@ -16,16 +16,17 @@ function parseLines(text: string): InventoryRequest["items"] {
     .split(/\r?\n/)
     .filter((line) => line.trim())
     .map((line, index) => {
-      const [code, quantity, value, ...extra] = line.split(/[\t;]/);
+      const [code, quantity, value, packaging, ...extra] = line.split(/[\t;]/);
       if (!/^\d{1,40}$/.test(code.trim()) || !quantity || extra.length) {
         throw new Error(
-          `Linha ${index + 1}: informe PLU, quantidade e valor opcional.`,
+          `Linha ${index + 1}: informe PLU, quantidade, valor e embalagem opcionais.`,
         );
       }
       return {
         code: code.trim(),
         quantity: number(quantity),
         value: value?.trim() ? number(value) : null,
+        package: packaging?.trim() || null,
       };
     });
 }
@@ -73,7 +74,7 @@ export function Inventory() {
               ))}
             </select>
             <label htmlFor="inventory-input">
-              PLU, quantidade e valor opcional
+              PLU, quantidade, valor e embalagem opcionais
             </label>
             <textarea
               name="inventory"
@@ -81,10 +82,10 @@ export function Inventory() {
               rows={6}
               required
               maxLength={500_000}
-              placeholder="100;2;19,90"
+              placeholder="100;2;19,90;CX-12"
             />
             <p className="muted">
-              Separe os campos com tabulação ou ponto e vírgula.
+              Separe os campos com tabulação ou ponto e vírgula. Para normalizar embalagens, informe a quarta coluna conforme o cadastro de referência. Se não informar valor, mantenha o terceiro campo vazio.
             </p>
           </>
         ) : (
@@ -127,7 +128,7 @@ export function Inventory() {
                 {result.items.map((item) => (
                   <tr key={item.code}>
                     <td>{item.code}</td>
-                    <td>{item.inventory_quantity}</td>
+                    <td>{item.inventory_quantity}{item.inventory_normalized&&<small>{item.inventory_normalized.quantity} {item.inventory_normalized.unit} · {item.inventory_normalized.reference}</small>}</td>
                     <td>{money(item.inventory_value)}</td>
                     <td>
                       {item.pending.length
@@ -135,7 +136,7 @@ export function Inventory() {
                             <div key={pending.occurrence + pending.package}>
                               {pending.occurrence} · {pending.reason} ·{" "}
                               {pending.quantity} {pending.package} ·{" "}
-                              {money(pending.total)}
+                              {money(pending.total)}{pending.normalized&&<small>{pending.normalized.quantity} {pending.normalized.unit} · {pending.normalized.reference}</small>}
                             </div>
                           ))
                         : "Nenhum vínculo encontrado."}

@@ -76,6 +76,7 @@ export interface Summary {
   occurrences: number;
   items_without_value: number;
   items_unknown_reason?: number;
+  financial_counts?: {approved:number; recovered:number; pending:number};
   deadline_counts?: {within: number; overdue: number; missing_date: number} | null;
   status_counts: Record<string, number>;
   totals_by_reason: Record<string, string>;
@@ -88,7 +89,7 @@ export interface Summary {
 
 export interface InventoryRequest {
   destination: string;
-  items: { code: string; quantity: string; value: string | null }[];
+  items: { code: string; quantity: string; value: string | null; package?: string | null }[];
 }
 
 export interface InventoryResult {
@@ -96,12 +97,14 @@ export interface InventoryResult {
     code: string;
     inventory_quantity: string;
     inventory_value: string | null;
+    inventory_normalized?: NormalizedQuantity | null;
     pending: {
       occurrence: string;
       reason: string;
       quantity: string;
       package: string;
       total: string | null;
+      normalized?: NormalizedQuantity | null;
     }[];
   }[];
   note: string;
@@ -182,4 +185,83 @@ export interface CatalogProduct {
 export interface CatalogPage {
   products: CatalogProduct[];
   next_cursor: number | null;
+}
+
+
+export interface SupplierCheckInput {
+  store: string;
+  supplier_code: string | null;
+  supplier_name: string;
+  checker: string;
+  checked_at: string;
+  reference: string | null;
+  notes: string | null;
+}
+export interface SupplierCheck extends SupplierCheckInput {
+  id: number;
+  active: boolean;
+  revision: number;
+  created_by: string;
+}
+export interface SupplierFilters {
+  store: string;
+  search: string;
+  checker: string;
+  from_date: string;
+  to_date: string;
+  include_cancelled: boolean;
+}
+export interface SupplierPage {
+  records: SupplierCheck[];
+  next_cursor: number | null;
+  completed: number;
+  cancelled: number;
+}
+export interface SupplierHistory {
+  events: {action: string; actor: string; reason: string | null; previous: SupplierCheck | null; current: SupplierCheck; created_at: string}[];
+  next_cursor: number | null;
+}
+
+
+export interface OperationalPolicy {
+  enabled: boolean;
+  days: number;
+  start_field: "received_at" | "included_at";
+  timezone: string;
+  holidays: string[];
+  reference: string;
+  revision: number;
+}
+export interface FinanceReview {
+  approved: string | null;
+  recovered: string | null;
+  pending: string | null;
+  reference: string;
+  revision: number;
+}
+
+
+export interface NormalizedQuantity {
+  quantity: string;
+  unit: string;
+  reference: string;
+}
+export interface UnitReference {
+  code: string;
+  package: string;
+  base_unit: string;
+  factor: string;
+  reference: string;
+  active: boolean;
+  revision: number;
+}
+export interface Diagnostics {
+  uptime_seconds: number;
+  requests: number;
+  server_errors: number;
+  client_errors: number;
+  rate_limited: number;
+  slow_requests: number;
+  mean_duration_ms: number;
+  scope: string;
 }
