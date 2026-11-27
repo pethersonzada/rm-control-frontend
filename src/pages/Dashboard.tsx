@@ -44,6 +44,7 @@ export function Dashboard({ canImport }: { canImport: boolean }) {
                 <dt>Itens sem valor informado</dt>
                 <dd>{summary.items_without_value}</dd>
               </div>
+              {summary.items_unknown_reason ? <div><dt>Itens com motivo não classificado</dt><dd>{summary.items_unknown_reason}</dd></div> : null}
               {Object.entries(summary.status_counts).map(([status, count]) => (
                 <div key={status}>
                   <dt>{status}</dt>
@@ -64,6 +65,7 @@ export function Dashboard({ canImport }: { canImport: boolean }) {
               </Suspense>
             )}
           </section>
+          {remote && <section className="panel stack"><h2>Prazos dos chamados pendentes</h2>{summary.deadline_counts ? <dl className="metrics"><div><dt>Dentro do prazo</dt><dd>{summary.deadline_counts.within}</dd></div><div><dt>Prazo decorrido</dt><dd>{summary.deadline_counts.overdue}</dd></div><div><dt>Data insuficiente</dt><dd>{summary.deadline_counts.missing_date}</dd></div></dl>:<p className="muted">Calendário operacional ainda não configurado.</p>}</section>}
           <section className="panel stack">
             <h2>Financeiro</h2>
             <dl className="metrics">
