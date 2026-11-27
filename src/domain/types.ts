@@ -29,7 +29,11 @@ export interface Occurrence {
   items: Item[];
 }
 
+export type ImportState = "new" | "updated" | "unchanged" | "conflicts";
+
 export interface Preview {
+  comparison?: Record<ImportState, number>;
+  classifications?: {code: string; destination: string; state: ImportState}[];
   records: Occurrence[];
   warnings: string[];
   blocked?: boolean;
@@ -147,4 +151,18 @@ export interface TicketInput {
   external_code: string | null;
   items: Item[];
   invoices: { number: string; series: string }[];
+}
+
+
+export interface HistoryEvent {
+  action: string;
+  subject: string;
+  previous_status: string | null;
+  next_status: string | null;
+  created_at: string;
+  details: {revision?: number; fields?: string[]; items?: number; invoices?: number} | null;
+}
+export interface HistoryPage {
+  events: HistoryEvent[];
+  next_cursor: number | null;
 }
