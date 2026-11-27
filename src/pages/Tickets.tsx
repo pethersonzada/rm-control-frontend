@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useWorkspace } from "../hooks/workspace";
 import type { Item, Occurrence, TicketInput } from "../domain/types";
 import { QueryState } from "../components/QueryState";
+import { ApiError } from "../services/api";
 
 const emptyItem = (): Item => ({code:"", description:"", package:"", quantity:"", total:null, unit_value:null, category:null});
 function isoDay(value?: string | null) {
@@ -58,6 +59,7 @@ export function TicketForm({record, onCancel}: {record?: Occurrence; onCancel: (
       setCreated(response);
       await client.invalidateQueries();
     } catch (caught) {
+      if (!record && caught instanceof ApiError && [400, 401, 403, 413, 422, 429].includes(caught.status)) sentPayload.current = null;
       setError((caught as Error).message);
     } finally {pending.current=false;setBusy(false);}
   }
