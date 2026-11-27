@@ -169,6 +169,8 @@ export function api(
     ) {
       throw new Error("Prévia fora do formato esperado.");
     }
+    if (data.comparison && ["new","updated","unchanged","conflicts"].some(key=>!Number.isSafeInteger(data.comparison![key as keyof typeof data.comparison]) || data.comparison![key as keyof typeof data.comparison]<0)) throw new Error("Comparação fora do formato esperado.");
+    if (data.classifications && (!Array.isArray(data.classifications) || data.classifications.some(c=>typeof c.code!=="string"||typeof c.destination!=="string"||!["new","updated","unchanged","conflicts"].includes(c.state)))) throw new Error("Classificação fora do formato esperado.");
     return data;
   }
 

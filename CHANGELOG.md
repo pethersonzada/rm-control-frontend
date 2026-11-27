@@ -20,3 +20,10 @@
 
 - Tela de acesso da homologação redesenhada, com cadastro por e-mail, confirmação de senha e liberação administrativa por UID.
 - Cadastro agora diferencia e-mail já cadastrado e senha rejeitada e oferece recuperação direta.
+
+## Em desenvolvimento
+
+- Abertura e edição nativas, XLSX filtrado, lojas e aprovação de contas.
+- Histórico de alterações, catálogo de referência e busca por PLU.
+- Importação comparativa, mapeamento XLSX, detalhe avulso por loja e proteção contra prévia desatualizada.
+- Indicadores de prazo opt-in e preservação do build demo isolado.
