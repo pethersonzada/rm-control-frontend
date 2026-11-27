@@ -27,3 +27,9 @@
 - Histórico de alterações, catálogo de referência e busca por PLU.
 - Importação comparativa, mapeamento XLSX, detalhe avulso por loja e proteção contra prévia desatualizada.
 - Indicadores de prazo opt-in e preservação do build demo isolado.
+
+## Em desenvolvimento: conferências e configuração
+
+- Fornecedores conferidos: registro, filtros, correção, cancelamento, histórico e XLSX.
+- Configuração de prazo, feriados, conversões validadas e valores financeiros conferidos.
+- Diagnóstico administrativo de servidor e cobertura de valores financeiros no painel.

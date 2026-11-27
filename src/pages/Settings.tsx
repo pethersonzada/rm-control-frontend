@@ -2,6 +2,8 @@ import {useState,type FormEvent} from "react";
 import {useQuery,useQueryClient} from "@tanstack/react-query";
 import {useWorkspace} from "../hooks/workspace";
 import {QueryState} from "../components/QueryState";
+import {UnitReferences} from "../components/UnitReferences";
+import {Diagnostics} from "../components/Diagnostics";
 import type {OperationalPolicy} from "../domain/types";
 
 function PolicyForm({value}:{value:OperationalPolicy}){
@@ -43,5 +45,5 @@ function PolicyForm({value}:{value:OperationalPolicy}){
 export default function Settings(){
   const {remote}=useWorkspace();
   const q=useQuery({queryKey:["operational-policy"],queryFn:({signal})=>remote!.policy(signal)});
-  return <><h1>Configurações operacionais</h1><QueryState loading={q.isPending} error={q.error} retry={()=>void q.refetch()}/>{q.data&&<PolicyForm value={q.data}/>}</>;
+  return <><h1>Configurações operacionais</h1><QueryState loading={q.isPending} error={q.error} retry={()=>void q.refetch()}/>{q.data&&<PolicyForm value={q.data}/>}<UnitReferences/><Diagnostics/></>;
 }

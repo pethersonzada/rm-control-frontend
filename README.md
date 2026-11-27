@@ -54,3 +54,12 @@ O menu **Lojas** permite criar, editar e desativar unidades pelo administrador r
 A importação complementar apresenta comparação com os registros existentes, permite selecionar a loja do detalhe avulso, mapear cabeçalhos XLSX e cancelar/limpar a prévia. A confirmação usa a mesma chave de idempotência em tentativas de rede e pode exigir nova análise se os dados mudaram. A leitura multipart é limitada e síncrona; a barra de progresso é indeterminada, não representa percentual inventado.
 
 Os indicadores de prazo só aparecem com calendário configurado no backend. A interface não aplica regras financeiras presumidas. Use exclusivamente dados sintéticos até a autorização corporativa.
+
+
+## Fornecedores e configurações
+
+Na área Fornecedores conferidos, registre somente conferências concluídas. O fornecedor pode aparecer mais de uma vez em entregas distintas, e o conferente pode ser diferente do usuário que registra. Os filtros por loja, período, fornecedor e conferente são aplicados também ao relatório XLSX. Correções e cancelamentos exigem motivo e preservam histórico. O formato inicial será homologado com a planilha de trabalho.
+
+Configurações permite ao responsável cadastrar a regra de prazo, feriados e referências de conversão por embalagem de produtos ativos, sempre com fonte conferida. A conciliação preserva quantidades originais e não altera estoque. Na expansão dos chamados, a conferência financeira permite ao responsável registrar valores aprovados, recuperados e pendentes com referência, sem inferência automática. O diagnóstico é local ao processo e não mantém histórico.
+
+Antes de utilização real, valide o modelo dos arquivos e as regras com a empresa, obtenha autorização e isole os ambientes. Ambos os endereços atuais continuam de teste; nenhum dado real deve ser inserido.

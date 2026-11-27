@@ -15,7 +15,7 @@ import type {
   CatalogPage,
   CatalogProduct,
   SupplierCheck, SupplierCheckInput, SupplierFilters, SupplierPage, SupplierHistory,
-  OperationalPolicy, FinanceReview,
+  OperationalPolicy, FinanceReview, UnitReference, Diagnostics,
 } from "../domain/types";
 import { exact } from "../domain/money";
 
@@ -184,6 +184,9 @@ export function api(
     return params;
   }
   return {
+    units: (code:string,signal?:AbortSignal)=>request<UnitReference[]>('/admin/units?code='+encodeURIComponent(code),{signal}),
+    saveUnit: (data:UnitReference)=>request<UnitReference>('/admin/units',{method:'PUT',body:JSON.stringify(data)}),
+    diagnostics: (signal?:AbortSignal)=>request<Diagnostics>('/admin/diagnostics',{signal}),
     policy: (signal?:AbortSignal)=>request<OperationalPolicy>('/admin/policy',{signal}),
     savePolicy: (data:OperationalPolicy)=>request<OperationalPolicy>('/admin/policy',{method:'PUT',body:JSON.stringify(data)}),
     finance: (record:Occurrence,signal?:AbortSignal)=>request<FinanceReview>('/occurrences/'+encodeURIComponent(record.code)+'/finance?store='+encodeURIComponent(record.destination),{signal}),

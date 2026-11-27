@@ -89,7 +89,7 @@ export interface Summary {
 
 export interface InventoryRequest {
   destination: string;
-  items: { code: string; quantity: string; value: string | null }[];
+  items: { code: string; quantity: string; value: string | null; package?: string | null }[];
 }
 
 export interface InventoryResult {
@@ -97,12 +97,14 @@ export interface InventoryResult {
     code: string;
     inventory_quantity: string;
     inventory_value: string | null;
+    inventory_normalized?: NormalizedQuantity | null;
     pending: {
       occurrence: string;
       reason: string;
       quantity: string;
       package: string;
       total: string | null;
+      normalized?: NormalizedQuantity | null;
     }[];
   }[];
   note: string;
@@ -236,4 +238,30 @@ export interface FinanceReview {
   pending: string | null;
   reference: string;
   revision: number;
+}
+
+
+export interface NormalizedQuantity {
+  quantity: string;
+  unit: string;
+  reference: string;
+}
+export interface UnitReference {
+  code: string;
+  package: string;
+  base_unit: string;
+  factor: string;
+  reference: string;
+  active: boolean;
+  revision: number;
+}
+export interface Diagnostics {
+  uptime_seconds: number;
+  requests: number;
+  server_errors: number;
+  client_errors: number;
+  rate_limited: number;
+  slow_requests: number;
+  mean_duration_ms: number;
+  scope: string;
 }
